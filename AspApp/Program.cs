@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using OpenIddict.Abstractions;
 using Quartz;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -353,7 +354,6 @@ public class Program
         {
             var identityDb = scope.ServiceProvider.GetRequiredService<Identity_DbContext>();
             await identityDb.Database.MigrateAsync();
-
             //***** Create "admin" Identity *****
             var userManager = scope.ServiceProvider.GetRequiredService<UserManager<Identity_UserDbModel>>();
 
@@ -386,6 +386,46 @@ public class Program
             {
                 await roleManager.CreateAsync(new Identity_RoleDbModel("Identity_Admins"));
                 await userManager.AddToRoleAsync(admin, "Identity_Admins");
+            }
+
+
+
+            // ***** Angular app *****
+            var appManager = scope.ServiceProvider.GetRequiredService<IOpenIddictApplicationManager>();
+
+            if (await appManager.FindByClientIdAsync("AngApp001") is null)
+            {
+                await appManager.CreateAsync(new OpenIddictApplicationDescriptor
+                {
+                    ClientId = "AngApp001",
+                    ConsentType = ConsentTypes.Explicit,
+                    DisplayName = "Angular Client Application 001",
+                    ClientType = ClientTypes.Public,
+                    PostLogoutRedirectUris =
+                    {
+                        new Uri($"https://localhost:{builder.Configuration["WebServerPort"]}")
+                    },
+                    RedirectUris =
+                    {
+                        new Uri($"https://localhost:{builder.Configuration["WebServerPort"]}")
+                    },
+                    Permissions =
+                    {
+                        Permissions.Endpoints.Authorization,
+                        Permissions.Endpoints.EndSession,
+                        Permissions.Endpoints.Token,
+                        Permissions.GrantTypes.AuthorizationCode,
+                        Permissions.GrantTypes.RefreshToken,
+                        Permissions.ResponseTypes.Code,
+                        Permissions.Scopes.Email,
+                        Permissions.Scopes.Profile,
+                        Permissions.Scopes.Roles,
+                    },
+                    Requirements =
+                    {
+                        Requirements.Features.ProofKeyForCodeExchange
+                    },
+                });
             }
         }
 

@@ -1,0 +1,13 @@
+@if(stopWaiting()){
+<h3>isAuthenticated: {{oidcSecurityService.authenticated().isAuthenticated}}</h3>
+<pre>{{oidcSecurityService.userData() | json}}</pre>
+@if(oidcSecurityService.authenticated().isAuthenticated){
+<button (click)="logout()">Logout</button>
+}
+@else {
+<button (click)="login()">Login</button>
+}
+}
+@else{
+<app-wait-spinner></app-wait-spinner>
+}

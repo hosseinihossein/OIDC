@@ -1,0 +1,18 @@
+<h1>Please Login</h1>
+
+<form action="/Identity/Api/Authentication/Login" method="post" enctype="application/x-www-form-urlencoded">
+    <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
+    <input type="text" name="UsernameOrEmail">
+    <input type="text" name="Password">
+    <button type="submit">Submit</button>
+</form>
+
+<form action="/Identity/Api/Authentication/LoginWithGitHub" method="post" enctype="application/x-www-form-urlencoded">
+    <input type="hidden" name="ReturnUrl" value="/">
+    <button type="submit">Login with GitHub</button>
+</form>
+
+<form action="/Identity/Api/Authentication/LoginWithGoogle" method="post" enctype="application/x-www-form-urlencoded">
+    <input type="hidden" name="ReturnUrl" value="/">
+    <button type="submit">Login with Google</button>
+</form>
