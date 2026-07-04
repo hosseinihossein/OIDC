@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
+import { SingletonService } from './shared/singleton-service';
 
 @Component({
   selector: 'app-root',
@@ -10,6 +11,7 @@ import { OidcSecurityService } from 'angular-auth-oidc-client';
 })
 export class App implements OnInit {
   private readonly oidcSecurityService = inject(OidcSecurityService);
+  private readonly singleton = inject(SingletonService);
 
   /*iAuthenticated = signal(false);
   userDataJson = signal<string>("");
@@ -20,6 +22,7 @@ export class App implements OnInit {
     // restores stored sessions, and starts silent renewal.
     this.oidcSecurityService.checkAuth().subscribe(({ isAuthenticated }) => {
       console.log("isAuthenticated: "+isAuthenticated);
+      this.singleton.authChekced.set(true);
       //console.log()
       /*this.iAuthenticated.set(isAuthenticated);
       this.userDataJson.set(JSON.stringify(userData));

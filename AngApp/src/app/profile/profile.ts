@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 import { WaitSpinner } from '../shared/wait-spinner/wait-spinner';
 import { JsonPipe } from '@angular/common';
+import { SingletonService } from '../shared/singleton-service';
 
 @Component({
   selector: 'app-profile',
@@ -11,11 +12,12 @@ import { JsonPipe } from '@angular/common';
 })
 export class Profile {
   readonly oidcSecurityService = inject(OidcSecurityService);
+  private readonly singleton = inject(SingletonService);
 
   stopWaiting = signal(false);
 
   ngOnInit(): void {
-    if(this.oidcSecurityService.authenticated().isAuthenticated){
+    if(this.singleton.authChekced()){
       this.stopWaiting.set(true);
     }
   }

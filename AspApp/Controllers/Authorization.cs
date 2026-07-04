@@ -13,8 +13,8 @@ using static OpenIddict.Abstractions.OpenIddictConstants;
 
 namespace AspApp.Controllers;
 
-[ApiController]
-[Route("Identity/Api/[controller]/[action]")]
+//[ApiController]
+//[Route("Identity/Api/[controller]/[action]")]
 public class AuthorizationController : ControllerBase
 {
     private readonly IOpenIddictApplicationManager _applicationManager;
@@ -42,8 +42,8 @@ public class AuthorizationController : ControllerBase
 
 
 
-    [HttpGet]
-    [HttpPost]
+    [HttpGet("~/Identity/Api/Authorization/Authorize")]
+    [HttpPost("~/Identity/Api/Authorization/Authorize")]
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Authorize()
     {
@@ -74,6 +74,7 @@ public class AuthorizationController : ControllerBase
             // return an error indicating that the user is not logged in.
             if (openIddictRequest.HasPromptValue(PromptValues.None))
             {
+                Console.WriteLine("\n***** forbidden ");
                 return Forbid(
                     authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                     properties: new AuthenticationProperties(new Dictionary<string, string?>
@@ -197,7 +198,7 @@ public class AuthorizationController : ControllerBase
 
             // In every other case, render the consent form.
             default:
-                string redirectUri = "~/ConsentForm" +
+                string redirectUri = "~/Authorize/Consent" +
                 QueryString.Create(Request.HasFormContentType ? Request.Form : Request.Query);
                 return Redirect(redirectUri);
                 /*return View(new AuthorizeViewModel
@@ -209,7 +210,7 @@ public class AuthorizationController : ControllerBase
     }
 
     [Authorize, FormValueRequired("Consent")]
-    [HttpPost]
+    [HttpPost("~/Identity/Api/Authorization/Authorize")]
     //[ValidateAntiForgeryToken]
     public async Task<IActionResult> Consent([FromForm] Authorization_Consent_FormModel formModel)
     {
@@ -381,7 +382,7 @@ public class AuthorizationController : ControllerBase
     public IActionResult Deny() => Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
 
     [Authorize]
-    [HttpGet]
+    [HttpGet("~/Identity/Api/Authorization/Logout")]
     public async Task<IActionResult> Logout()
     {
         // Ask ASP.NET Core Identity to delete the local and external cookies created

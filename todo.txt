@@ -1,4 +1,5 @@
 [Ang]
+- stopWaiting doesn't set to true after loging in
 - create user id card for home page
 - 
 
