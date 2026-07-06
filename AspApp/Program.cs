@@ -213,7 +213,7 @@ public class Program
             .SetTokenEndpointUris("Identity/Api/Authorization/Token")
             .SetUserInfoEndpointUris("Identity/Api/Authorization/UserInfo");
 
-            options.RegisterScopes(Scopes.Email, Scopes.Profile, Scopes.Roles);
+            options.RegisterScopes(Scopes.Email, /*Scopes.Profile,*/ Scopes.Roles);
 
             options.AllowClientCredentialsFlow()
             .AllowAuthorizationCodeFlow()
@@ -238,6 +238,10 @@ public class Program
             .EnableStatusCodePagesIntegration();
 
             options.RequireProofKeyForCodeExchange();//enables globally
+
+            options.SetAccessTokenLifetime(TimeSpan.FromHours(10));
+            options.SetIdentityTokenLifetime(TimeSpan.FromHours(10));
+            options.SetRefreshTokenLifetime(TimeSpan.FromDays(14));
         })
         .AddValidation(options =>
         {
@@ -387,6 +391,11 @@ public class Program
                 await roleManager.CreateAsync(new Identity_RoleDbModel("Identity_Admins"));
                 await userManager.AddToRoleAsync(admin, "Identity_Admins");
             }
+            /*if (await roleManager.FindByNameAsync("Test_Role") == null)
+            {
+                await roleManager.CreateAsync(new Identity_RoleDbModel("Test_Role"));
+                await userManager.AddToRoleAsync(admin, "Test_Role");
+            }*/
 
 
 
@@ -418,7 +427,7 @@ public class Program
                         Permissions.GrantTypes.RefreshToken,
                         Permissions.ResponseTypes.Code,
                         Permissions.Scopes.Email,
-                        Permissions.Scopes.Profile,
+                        //Permissions.Scopes.Profile,
                         Permissions.Scopes.Roles,
                     },
                     Requirements =

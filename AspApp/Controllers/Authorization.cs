@@ -47,8 +47,12 @@ public class AuthorizationController : ControllerBase
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Authorize()
     {
-        var openIddictRequest = HttpContext.GetOpenIddictServerRequest() ??
-        throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+        var openIddictRequest = HttpContext.GetOpenIddictServerRequest();
+        if (openIddictRequest is null)
+        {
+            ModelState.AddModelError("Request", "The OpenID Connect request cannot be retrieved.");
+            return BadRequest(ModelState);
+        }
 
         // Try to retrieve the user principal stored in the authentication cookie and redirect
         // the user agent to the login page (or to an external provider) in the following cases:
@@ -74,7 +78,6 @@ public class AuthorizationController : ControllerBase
             // return an error indicating that the user is not logged in.
             if (openIddictRequest.HasPromptValue(PromptValues.None))
             {
-                Console.WriteLine("\n***** forbidden ");
                 return Forbid(
                     authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
                     properties: new AuthenticationProperties(new Dictionary<string, string?>
@@ -104,12 +107,20 @@ public class AuthorizationController : ControllerBase
         }
 
         // Retrieve the profile of the logged in user.
-        var user = await _userManager.GetUserAsync(authResult.Principal) ??
-        throw new InvalidOperationException("The user details cannot be retrieved.");
+        var user = await _userManager.GetUserAsync(authResult.Principal);
+        if (user is null)
+        {
+            ModelState.AddModelError("User", "The user details cannot be retrieved.");
+            return BadRequest(ModelState);
+        }
 
         // Retrieve the application details from the database.
-        var application = await _applicationManager.FindByClientIdAsync(openIddictRequest.ClientId!) ??
-        throw new InvalidOperationException("Details concerning the calling client application cannot be found.");
+        var application = await _applicationManager.FindByClientIdAsync(openIddictRequest.ClientId!);
+        if (application is null)
+        {
+            ModelState.AddModelError("application", "Details concerning the calling client application cannot be found.");
+            return BadRequest(ModelState);
+        }
 
         // Retrieve the permanent authorizations associated with the user and the calling client application.
         var authorizations = await _authorizationManager.FindAsync(
@@ -143,18 +154,24 @@ public class AuthorizationController : ControllerBase
             !openIddictRequest.HasPromptValue(PromptValues.Consent):
                 // Create the claims-based identity that will be used by OpenIddict to generate tokens.
                 var claimsIdentity = new ClaimsIdentity(
-                    authenticationType: TokenValidationParameters.DefaultAuthenticationType,
+                    authenticationType: TokenValidationParameters.DefaultAuthenticationType/*,
                     nameType: Claims.Name,
-                    roleType: Claims.Role
+                    roleType: Claims.Role*/
                 );
 
                 // Add the claims that will be persisted in the tokens.
                 claimsIdentity.SetClaim(Claims.Subject, await _userManager.GetUserIdAsync(user))
                 .SetClaim(Claims.Email, await _userManager.GetEmailAsync(user))
                 .SetClaim(Claims.EmailVerified, await _userManager.IsEmailConfirmedAsync(user))
-                .SetClaim(Claims.Name, await _userManager.GetUserNameAsync(user))
-                //.SetClaim(Claims.PreferredUsername, await _userManager.GetUserNameAsync(user))
+                //.SetClaim(Claims.Username, await _userManager.GetUserNameAsync(user))
                 .SetClaims(Claims.Role, [.. await _userManager.GetRolesAsync(user)]);
+                //.SetClaim(Claims.Name, user.DisplayName)
+                //.SetClaim("description", user.Description)
+                //.SetClaim("public_email", user.PublicEmail)
+                //.SetClaim("image_version", user.ImageVersion)
+                //.SetClaim("has_image", user.HasImage)
+                //.SetClaim("remote_image", user.RemoteImageUrl)
+                //.SetClaim("created_at", user.CreatedAt);
 
                 // Note: in this sample, the granted scopes match the requested scope
                 // but you may want to allow the user to uncheck specific scopes.
@@ -201,114 +218,37 @@ public class AuthorizationController : ControllerBase
                 string redirectUri = "~/Authorize/Consent" +
                 QueryString.Create(Request.HasFormContentType ? Request.Form : Request.Query);
                 return Redirect(redirectUri);
-                /*return View(new AuthorizeViewModel
-                {
-                    ApplicationName = await _applicationManager.GetLocalizedDisplayNameAsync(application),
-                    Scope = request.Scope
-                });*/
         }
     }
 
-    [Authorize, FormValueRequired("Consent")]
-    [HttpPost("~/Identity/Api/Authorization/Authorize")]
-    //[ValidateAntiForgeryToken]
-    public async Task<IActionResult> Consent([FromForm] Authorization_Consent_FormModel formModel)
-    {
-        if (ModelState.IsValid && formModel.Consent == "Accept")
-        {
-            var openIddictRequest = HttpContext.GetOpenIddictServerRequest() ??
-            throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
 
-            // Retrieve the profile of the logged in user.
-            var user = await _userManager.GetUserAsync(User) ??
-            throw new InvalidOperationException("The user details cannot be retrieved.");
-
-            // Retrieve the application details from the database.
-            var application = await _applicationManager.FindByClientIdAsync(openIddictRequest.ClientId!) ??
-            throw new InvalidOperationException("Details concerning the calling client application cannot be found.");
-
-            // Retrieve the permanent authorizations associated with the user and the calling client application.
-            var authorizations = await _authorizationManager.FindAsync(
-                subject: await _userManager.GetUserIdAsync(user),
-                client: await _applicationManager.GetIdAsync(application),
-                status: Statuses.Valid,
-                type: AuthorizationTypes.Permanent,
-                scopes: openIddictRequest.GetScopes()
-            ).ToListAsync();
-
-            // Note: the same check is already made in the other action but is repeated
-            // here to ensure a malicious user can't abuse this POST-only endpoint and
-            // force it to return a valid response without the external authorization.
-            if (authorizations.Count is 0 &&
-                await _applicationManager.HasConsentTypeAsync(application, ConsentTypes.External))
-            {
-                return Forbid(
-                    authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                    properties: new AuthenticationProperties(new Dictionary<string, string?>
-                    {
-                        [OpenIddictServerAspNetCoreConstants.Properties.Error] = Errors.ConsentRequired,
-                        [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] =
-                            "The logged in user is not allowed to access this client application."
-                    })
-                );
-            }
-
-            // Create the claims-based identity that will be used by OpenIddict to generate tokens.
-            var claimsIdentity = new ClaimsIdentity(
-                authenticationType: TokenValidationParameters.DefaultAuthenticationType,
-                nameType: Claims.Name,
-                roleType: Claims.Role
-            );
-
-            // Add the claims that will be persisted in the tokens.
-            claimsIdentity.SetClaim(Claims.Subject, await _userManager.GetUserIdAsync(user))
-            .SetClaim(Claims.Email, await _userManager.GetEmailAsync(user))
-            .SetClaim(Claims.EmailVerified, await _userManager.IsEmailConfirmedAsync(user))
-            .SetClaim(Claims.Name, await _userManager.GetUserNameAsync(user))
-            //.SetClaim(Claims.PreferredUsername, await _userManager.GetUserNameAsync(user))
-            .SetClaims(Claims.Role, [.. await _userManager.GetRolesAsync(user)]);
-
-            // Note: in this sample, the granted scopes match the requested scope
-            // but you may want to allow the user to uncheck specific scopes.
-            // For that, simply restrict the list of scopes before calling SetScopes.
-            claimsIdentity.SetScopes(openIddictRequest.GetScopes());
-            claimsIdentity.SetResources(await _scopeManager.ListResourcesAsync(claimsIdentity.GetScopes()).ToListAsync());
-
-            // Automatically create a permanent authorization to avoid requiring explicit consent
-            // for future authorization or token requests containing the same scopes.
-            var authorization = authorizations.LastOrDefault();
-            authorization ??= await _authorizationManager.CreateAsync(
-                identity: claimsIdentity,
-                subject: await _userManager.GetUserIdAsync(user),
-                client: (await _applicationManager.GetIdAsync(application))!,
-                type: AuthorizationTypes.Permanent,
-                scopes: claimsIdentity.GetScopes()
-            );
-
-            claimsIdentity.SetAuthorizationId(await _authorizationManager.GetIdAsync(authorization));
-            claimsIdentity.SetDestinations(GetDestinations);
-
-            // Returning a SignInResult will ask OpenIddict to issue the appropriate access/identity tokens.
-            return SignIn(new ClaimsPrincipal(claimsIdentity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-        }
-
-        return Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
-    }
 
     [Authorize, FormValueRequired("submit.Accept")]
     [HttpPost("~/Identity/Api/Authorization/Authorize")/*, ValidateAntiForgeryToken*/]
     public async Task<IActionResult> Accept()
     {
-        var openIddictRequest = HttpContext.GetOpenIddictServerRequest() ??
-        throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+        var openIddictRequest = HttpContext.GetOpenIddictServerRequest();
+        if (openIddictRequest is null)
+        {
+            ModelState.AddModelError("Request", "The OpenID Connect request cannot be retrieved.");
+            return BadRequest(ModelState);
+        }
 
         // Retrieve the profile of the logged in user.
-        var user = await _userManager.GetUserAsync(User) ??
-        throw new InvalidOperationException("The user details cannot be retrieved.");
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            ModelState.AddModelError("User", "The user details cannot be retrieved.");
+            return BadRequest(ModelState);
+        }
 
         // Retrieve the application details from the database.
-        var application = await _applicationManager.FindByClientIdAsync(openIddictRequest.ClientId!) ??
-        throw new InvalidOperationException("Details concerning the calling client application cannot be found.");
+        var application = await _applicationManager.FindByClientIdAsync(openIddictRequest.ClientId!);
+        if (application is null)
+        {
+            ModelState.AddModelError("application", "Details concerning the calling client application cannot be found.");
+            return BadRequest(ModelState);
+        }
 
         // Retrieve the permanent authorizations associated with the user and the calling client application.
         var authorizations = await _authorizationManager.FindAsync(
@@ -338,17 +278,16 @@ public class AuthorizationController : ControllerBase
 
         // Create the claims-based identity that will be used by OpenIddict to generate tokens.
         var claimsIdentity = new ClaimsIdentity(
-            authenticationType: TokenValidationParameters.DefaultAuthenticationType,
+            authenticationType: TokenValidationParameters.DefaultAuthenticationType/*,
             nameType: Claims.Name,
-            roleType: Claims.Role
+            roleType: Claims.Role*/
         );
 
         // Add the claims that will be persisted in the tokens.
         claimsIdentity.SetClaim(Claims.Subject, await _userManager.GetUserIdAsync(user))
         .SetClaim(Claims.Email, await _userManager.GetEmailAsync(user))
         .SetClaim(Claims.EmailVerified, await _userManager.IsEmailConfirmedAsync(user))
-        .SetClaim(Claims.Name, await _userManager.GetUserNameAsync(user))
-        //.SetClaim(Claims.PreferredUsername, await _userManager.GetUserNameAsync(user))
+        //.SetClaim(Claims.Username, await _userManager.GetUserNameAsync(user))
         .SetClaims(Claims.Role, [.. await _userManager.GetRolesAsync(user)]);
 
         // Note: in this sample, the granted scopes match the requested scope
@@ -375,11 +314,15 @@ public class AuthorizationController : ControllerBase
         return SignIn(new ClaimsPrincipal(claimsIdentity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     }
 
+
+
     [Authorize, FormValueRequired("submit.Deny")]
     [HttpPost("~/Identity/Api/Authorization/Authorize")/*, ValidateAntiForgeryToken*/]
     // Notify OpenIddict that the authorization grant has been denied by the resource owner
     // to redirect the user agent to the client application using the appropriate response_mode.
     public IActionResult Deny() => Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+
+
 
     [Authorize]
     [HttpGet("~/Identity/Api/Authorization/Logout")]
@@ -404,6 +347,8 @@ public class AuthorizationController : ControllerBase
         );
     }
 
+
+
     [Authorize]
     [/*ActionName(nameof(Logout)),*/ HttpPost("~/Identity/Api/Authorization/Logout")/*, ValidateAntiForgeryToken*/]
     public async Task<IActionResult> LogoutPost()
@@ -427,13 +372,19 @@ public class AuthorizationController : ControllerBase
         );
     }
 
+
+
     [HttpPost("~/Identity/Api/Authorization/Token"), IgnoreAntiforgeryToken, Produces("application/json")]
     public async Task<IActionResult> Exchange()
     {
-        var request = HttpContext.GetOpenIddictServerRequest() ??
-            throw new InvalidOperationException("The OpenID Connect request cannot be retrieved.");
+        var openIddictRequest = HttpContext.GetOpenIddictServerRequest();
+        if (openIddictRequest is null)
+        {
+            ModelState.AddModelError("Request", "The OpenID Connect request cannot be retrieved.");
+            return BadRequest(ModelState);
+        }
 
-        if (request.IsAuthorizationCodeGrantType() || request.IsRefreshTokenGrantType())
+        if (openIddictRequest.IsAuthorizationCodeGrantType() || openIddictRequest.IsRefreshTokenGrantType())
         {
             // Retrieve the claims principal stored in the authorization code/refresh token.
             var authResult = await HttpContext.AuthenticateAsync(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
@@ -468,9 +419,9 @@ public class AuthorizationController : ControllerBase
             }
 
             var claimsIdentity = new ClaimsIdentity(authResult.Principal!.Claims,
-                authenticationType: TokenValidationParameters.DefaultAuthenticationType,
+                authenticationType: TokenValidationParameters.DefaultAuthenticationType/*,
                 nameType: Claims.Name,
-                roleType: Claims.Role
+                roleType: Claims.Role*/
             );
 
             // Override the user claims present in the principal in case they
@@ -478,8 +429,7 @@ public class AuthorizationController : ControllerBase
             claimsIdentity.SetClaim(Claims.Subject, await _userManager.GetUserIdAsync(user))
             .SetClaim(Claims.Email, await _userManager.GetEmailAsync(user))
             .SetClaim(Claims.EmailVerified, await _userManager.IsEmailConfirmedAsync(user))
-            .SetClaim(Claims.Name, await _userManager.GetUserNameAsync(user))
-            //.SetClaim(Claims.PreferredUsername, await _userManager.GetUserNameAsync(user))
+            //.SetClaim(Claims.Username, await _userManager.GetUserNameAsync(user))
             .SetClaims(Claims.Role, [.. await _userManager.GetRolesAsync(user)]);
 
             claimsIdentity.SetDestinations(GetDestinations);
@@ -487,16 +437,20 @@ public class AuthorizationController : ControllerBase
             // Returning a SignInResult will ask OpenIddict to issue the appropriate access/identity tokens.
             return SignIn(new ClaimsPrincipal(claimsIdentity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
-        else if (request.IsClientCredentialsGrantType())
+        else if (openIddictRequest.IsClientCredentialsGrantType())
         {
             // Note: the client credentials are automatically validated by OpenIddict:
             // if client_id or client_secret are invalid, this action won't be invoked.
 
-            var application = await _applicationManager.FindByClientIdAsync(request.ClientId!) ??
-                throw new InvalidOperationException("The application cannot be found.");
+            var application = await _applicationManager.FindByClientIdAsync(openIddictRequest.ClientId!);
+            if (application is null)
+            {
+                ModelState.AddModelError("application", "Details concerning the calling client application cannot be found.");
+                return BadRequest(ModelState);
+            }
 
             // Create a new ClaimsIdentity containing the claims that
-            // will be used to create an id_token, a token or a code.
+            // will be used to create an id_token, a token or a code. 
             var identity = new ClaimsIdentity(
                 TokenValidationParameters.DefaultAuthenticationType,
                 Claims.Name,
@@ -512,8 +466,10 @@ public class AuthorizationController : ControllerBase
             return SignIn(new ClaimsPrincipal(identity), OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
         }
 
-        throw new InvalidOperationException("The specified grant type is not supported.");
+        ModelState.AddModelError("GrantType", "The specified grant type is not supported.");
+        return BadRequest(ModelState);
     }
+
 
 
     private static IEnumerable<string> GetDestinations(Claim claim)
@@ -524,13 +480,13 @@ public class AuthorizationController : ControllerBase
 
         switch (claim.Type)
         {
-            case Claims.Name or Claims.PreferredUsername:
+            /*case Claims.Username or Claims.PreferredUsername:
                 yield return Destinations.AccessToken;
 
                 if (claim.Subject!.HasScope(Scopes.Profile))
                     yield return Destinations.IdentityToken;
 
-                yield break;
+                yield break;*/
 
             case Claims.Email or Claims.EmailVerified:
                 yield return Destinations.AccessToken;

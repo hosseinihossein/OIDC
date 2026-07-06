@@ -8,11 +8,11 @@
 </form>
 
 <form action="/Identity/Api/Authentication/LoginWithGitHub" method="post" enctype="application/x-www-form-urlencoded">
-    <input type="hidden" name="ReturnUrl" value="/">
+    <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
     <button type="submit">Login with GitHub</button>
 </form>
 
 <form action="/Identity/Api/Authentication/LoginWithGoogle" method="post" enctype="application/x-www-form-urlencoded">
-    <input type="hidden" name="ReturnUrl" value="/">
+    <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
     <button type="submit">Login with Google</button>
 </form>

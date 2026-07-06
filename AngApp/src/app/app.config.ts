@@ -23,7 +23,7 @@ export const appConfig: ApplicationConfig = {
         redirectUrl: "https://localhost:5443",
         postLogoutRedirectUri: "https://localhost:5443",
         clientId: 'AngApp001',
-        scope: 'openid profile email roles offline_access',
+        scope: 'openid email roles offline_access',
         responseType: 'code',
         silentRenew: true,
         useRefreshToken: true,

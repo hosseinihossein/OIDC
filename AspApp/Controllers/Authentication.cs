@@ -103,7 +103,7 @@ public class AuthenticationController : ControllerBase
         var properties = new AuthenticationProperties
         {
             // Only allow local return URLs to prevent open redirect attacks.(I don't know about this)
-            RedirectUri = formModel.ReturnUrl ?? "Identity/Authorize"
+            RedirectUri = formModel.ReturnUrl ?? "/"
         };
         properties.SetParameter("scope", _gitHubScopes);
 
@@ -117,7 +117,7 @@ public class AuthenticationController : ControllerBase
         var properties = new AuthenticationProperties
         {
             // Only allow local return URLs to prevent open redirect attacks.(I don't know about this)
-            RedirectUri = formModel.ReturnUrl ?? "Identity/Authorize"
+            RedirectUri = formModel.ReturnUrl ?? "/"
         };
         properties.SetParameter("scope", _googleScope);
 

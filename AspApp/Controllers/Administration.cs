@@ -1,6 +1,7 @@
 using AspApp.Filters;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OpenIddict.Validation.AspNetCore;
 
 namespace AspApp.Controllers;
 
@@ -11,9 +12,13 @@ public class AdministrationCoontrollers : ControllerBase
 
     [HttpGet]
     [GenerateAntiforgeryTokenCookie]
-    [Authorize]
+    [Authorize]//(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public IActionResult GetCsrf()
     {
         return Ok();
     }
+
+
+
+
 }
