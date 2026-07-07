@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using OpenIddict.Abstractions;
+using OpenIddict.Validation.AspNetCore;
 using Quartz;
 using static OpenIddict.Abstractions.OpenIddictConstants;
 
@@ -250,6 +251,28 @@ public class Program
 
             // Register the ASP.NET Core host.
             options.UseAspNetCore();
+        });
+
+
+
+        builder.Services.AddAuthentication(/*options =>
+        {
+            //wrong, local server should use cookie for authentication
+            options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+            options.DefaultChallengeScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+            options.DefaultScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+        }*/)
+        .AddCookie(options =>
+        {
+            options.Cookie.HttpOnly = true; // prevent from js access
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // https only
+            options.Cookie.SameSite = SameSiteMode.Strict;// csrf protection
+
+            options.ExpireTimeSpan = TimeSpan.FromDays(14);
+            options.SlidingExpiration = true;
+
+            //options.LoginPath = "/Account/Login";
+            //options.AccessDeniedPath = "/Account/AccessDenied";
         });
 
 

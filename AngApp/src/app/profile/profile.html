@@ -1,36 +1,63 @@
 @if(stopWaiting()){
-<!--mat-card>
+<mat-card>
     <mat-card-header>
-
-        <mat-card-title>
-
-        </mat-card-title>
-        <mat-card-subtitle>
-
-        </mat-card-subtitle>
+        <div style="float: inline-start;position: relative;">
+            @if(profileImgSrc()){
+            <img [ngSrc]="profileImgSrc()!" priority width="100" height="100" alt="user profile image"
+                id="user-profile-img">
+            }
+            @else {
+            <mat-icon style="font-size: 100px;width: 100px;height: 100px;">account_circle</mat-icon>
+            }
+        </div>
+        <div style="float: inline-start;position: relative;">
+            <mat-card-title>
+                @if(profileModel()){
+                {{profileModel()?.username}}
+                @if(profileModel()?.displayName){
+                ({{profileModel()?.displayName}})
+                }
+                }
+                @else {
+                You're Not identified! Please login.
+                }
+            </mat-card-title>
+            @if(profileModel()?.email &&
+            (idToken()?.sub === profileModel()?.id || profileModel()?.publicEmail)){
+            <mat-card-subtitle>
+                {{profileModel()?.email}}
+                @if(idToken()?.sub === profileModel()?.id){
+                @if(profileModel()?.emailConfirmed){
+                <mat-icon matTooltip="Confirmed" style="color: var(--mat-sys-on-primary-container);">verified</mat-icon>
+                }
+                @else {
+                <mat-icon matTooltip="Not Confirmed"
+                    style="color: var(--mat-sys-on-error-container);">verified_off</mat-icon>
+                }
+                }
+            </mat-card-subtitle>
+            }
+        </div>
     </mat-card-header>
+    @if(profileModel()){
     <mat-card-content>
-
+        <p>{{profileModel()?.description}}</p>
+        @if(profileModel()?.roles && profileModel()?.roles!.length > 0){
+        <p>Roles: {{profileModel()?.roles?.join(', ')}}</p>
+        }
+        <p>Created at: {{profileModel()?.createdAt | date}}</p>
     </mat-card-content>
-    <mat-card-actions>
-
+    }
+    <mat-card-actions align="end">
+        @if(oidcSecurityService.authenticated().isAuthenticated){
+        <button matButton="" (click)="logout()">Logout</button>
+        <button matButton="">Edit</button>
+        }
+        @else {
+        <button matButton="" (click)="login()">Login</button>
+        }
     </mat-card-actions>
-</mat-card-->
-<h3>isAuthenticated: {{oidcSecurityService.authenticated().isAuthenticated}}</h3>
-<p>userData:</p>
-<pre>{{oidcSecurityService.userData().userData | json}}</pre>
-<p>id token json:</p>
-<pre>{{idToken() | json}}</pre>
-<p>profile model json:</p>
-<pre>{{profileModel() | json}}</pre>
-<!--p>id token async:</p>
-<pre>{{oidcSecurityService.getPayloadFromIdToken() | async | json}}</pre-->
-@if(oidcSecurityService.authenticated().isAuthenticated){
-<button (click)="logout()">Logout</button>
-}
-@else {
-<button (click)="login()">Login</button>
-}
+</mat-card>
 }
 @else{
 <app-wait-spinner></app-wait-spinner>

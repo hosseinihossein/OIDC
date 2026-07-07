@@ -1,15 +1,17 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 import { WaitSpinner } from '../shared/wait-spinner/wait-spinner';
-import { AsyncPipe, JsonPipe } from '@angular/common';
+import { AsyncPipe, DatePipe, JsonPipe, NgOptimizedImage } from '@angular/common';
 import { SingletonService } from '../shared/singleton-service';
 import { MatCard, MatCardHeader, MatCardModule } from '@angular/material/card';
 import { MatButton } from '@angular/material/button';
 import { ProfileService } from './profile-service';
+import { MatIcon } from '@angular/material/icon';
+import { MatTooltip } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-profile',
-  imports: [WaitSpinner, JsonPipe, /*AsyncPipe,*/ MatCardModule/*, MatButton*/],
+  imports: [WaitSpinner, DatePipe, MatCardModule, MatButton, NgOptimizedImage, MatIcon, MatTooltip],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -21,6 +23,7 @@ export class Profile {
   stopWaiting = computed(()=>this.singleton.authChekced());
   idToken = signal<any>(null);
   profileModel = signal<Profile_Model|null>(null);
+  profileImgSrc = computed(()=>this.profileService.getProfileImageAddress(this.profileModel()));
 
   constructor(){
     effect(()=>{
