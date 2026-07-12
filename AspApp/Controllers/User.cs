@@ -20,6 +20,15 @@ public class UserController : ControllerBase
         _userManager = userManager;
     }
 
+
+    [HttpGet]
+    public IActionResult EnableTurnstile([FromServices] IConfiguration configuration)
+    {
+        return Ok(new { enableTurnstile = configuration.GetValue<bool>("TurnsTileEnable", false) });
+    }
+
+
+
     [HttpGet]
     [Authorize]//(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public async Task<IActionResult> ProfileModel()
@@ -57,5 +66,10 @@ public class UserController : ControllerBase
 
         return Ok(profileModel);
     }
+
+
+
+
+
 
 }

@@ -9,7 +9,7 @@ public class Authentication_Login_FormModel
     [StringLength(256)]
     public string UsernameOrEmail { get; set; } = string.Empty;
 
-    [StringLength(256)]
+    [StringLength(256, MinimumLength = 5)]
     public string Password { get; set; } = string.Empty;
 
     [StringLength(2048)]

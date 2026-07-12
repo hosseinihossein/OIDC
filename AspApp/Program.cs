@@ -255,13 +255,28 @@ public class Program
 
 
 
-        builder.Services.AddAuthentication(/*options =>
+        builder.Services.ConfigureApplicationCookie(options =>
         {
-            //wrong, local server should use cookie for authentication
-            options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-            options.DefaultChallengeScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-            options.DefaultScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-        }*/)
+            options.Cookie.HttpOnly = true; // prevent from js access
+            options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // https only
+            options.Cookie.SameSite = SameSiteMode.Strict;// csrf protection
+
+            //Default for "Remember Me". Without "Remember Me" → Session cookie (expires when browser closes)
+            options.ExpireTimeSpan = TimeSpan.FromDays(14);
+            options.SlidingExpiration = true;
+
+            //options.LoginPath = "/Account/Login";
+            //options.AccessDeniedPath = "/Account/AccessDenied";
+        });
+
+        //options =>
+        //{
+        //wrong, local server should use cookie for authentication
+        //options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+        //options.DefaultChallengeScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+        //options.DefaultScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
+        //}
+        /*builder.Services.AddAuthentication()
         .AddCookie(options =>
         {
             options.Cookie.HttpOnly = true; // prevent from js access
@@ -273,7 +288,7 @@ public class Program
 
             //options.LoginPath = "/Account/Login";
             //options.AccessDeniedPath = "/Account/AccessDenied";
-        });
+        });*/
 
 
 

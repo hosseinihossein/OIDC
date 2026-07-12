@@ -2,7 +2,7 @@ import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
-@Service()
+@Service()//@Injectable({ providedIn: 'root' })
 export class MyErrorHandler {
     private snackBar = inject(MatSnackBar);
 

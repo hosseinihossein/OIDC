@@ -1,3 +1,66 @@
+<form action="">
+    <mat-form-field appearance="fill">
+        <mat-label>Username or Email</mat-label>
+        <input type="text" matInput [formField]="loginForm.UsernameOrEmail">
+        @for(error of loginForm.UsernameOrEmail().errors(); track error.kind){
+        <mat-error>{{error.message}}</mat-error>
+        }
+    </mat-form-field>
+
+    <mat-form-field appearance="fill">
+        <mat-label>Password</mat-label>
+        <input type="password" matInput #passwordInput [formField]="loginForm.Password">
+        @if(passwordInput.type === "password"){
+        <mat-icon matSuffix (click)="passwordInput.type='text'">visibility</mat-icon>
+        }
+        @else {
+        <mat-icon matSuffix (click)="passwordInput.type='password'">visibility_off</mat-icon>
+        }
+        @for(error of loginForm.Password().errors(); track error.kind){
+        <mat-error>{{error.message}}</mat-error>
+        }
+    </mat-form-field>
+
+    @if(!loginForm.CfTurnstileResponse().hidden()){
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+    <!--input hidden [formField]="loginForm.CfTurnstileResponse" /-->
+    <div id="widget-container"></div>
+    }
+
+    <div>
+        <button matButton="filled" id="login-btn" type="submit" [disabled]="loginForm().invalid()">Login</button>
+    </div>
+    <div class="clearfix" style="margin: 8px auto;">
+        <button matButton id="forgetPassword-btn" (click)="forgetPassword()">Forget password?</button>
+        <a matButton id="signup-btn" [routerLink]="['/Account/Signup']">Create a new account</a>
+    </div>
+    <div style="text-align: center;font-size: 12px;margin: 16px 0;">or</div>
+    <div style="margin: auto;display: flex; justify-content: space-evenly;">
+        <button matFab matTooltip="Login with GitHub">
+            <img priority width="64" height="64" ngSrc="https://img.icons8.com/sf-black-filled/64/github.png"
+                alt="github" />
+        </button>
+        <button matFab matTooltip="Login with Google">
+            <img priority width="48" height="48" ngSrc="https://img.icons8.com/color/48/google-logo.png"
+                alt="google-logo" />
+        </button>
+        <button matFab matTooltip="Login with Apple">
+            <img priority width="50" height="50" ngSrc="https://img.icons8.com/ios-filled/50/mac-os.png" alt="mac-os" />
+        </button>
+    </div>
+
+    @if(displayWaitSpinner()){
+    <app-wait-spinner></app-wait-spinner>
+    }
+</form>
+
+<!--form action="">
+    @if(singleton.enableTurnstile()){
+    <input hidden formControlName="CfTurnstileResponse" />
+    <div id="widget-container"></div>
+    }
+</form>
+
 <h1>Please Login</h1>
 
 <form action="/Identity/Api/Authentication/Login" method="post" enctype="application/x-www-form-urlencoded">
@@ -15,4 +78,4 @@
 <form action="/Identity/Api/Authentication/LoginWithGoogle" method="post" enctype="application/x-www-form-urlencoded">
     <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
     <button type="submit">Login with Google</button>
-</form>
+</form-->

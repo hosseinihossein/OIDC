@@ -1,6 +1,37 @@
-import { Service, signal } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { inject, Service, signal } from '@angular/core';
+import { WindowService } from './window-service';
 
 @Service()
 export class SingletonService {
+    private readonly httpClient = inject(HttpClient);
+    private windowService = inject(WindowService);
+
     authChekced = signal(false);
+
+    enableTurnstile = signal(false);
+    readonly turnstileSiteKey = "0x4AAAAAAAkeZ2wTzJxqgC_K";
+
+    darkMode = signal(false);
+
+    constructor(){
+        let theme = localStorage.getItem("theme");
+        if(theme && theme == "dark"){
+        this.darkMode.set(true);
+        this.windowService.nativeWindow.document.body.classList.add('dark-mode');
+        }
+        else{
+        this.darkMode.set(false);
+        this.windowService.nativeWindow.document.body.classList.remove('dark-mode');
+        }
+        
+        this.httpClient.get<{enableTurnstile:boolean}>("/Identity/Api/User/EnableTurnstile").subscribe({
+            next: res => {
+                if(res && res.enableTurnstile === true){
+                    this.enableTurnstile.set(true);
+                }
+            },
+        });
+
+    }
 }

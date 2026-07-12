@@ -37,6 +37,7 @@ public class AuthenticationController : ControllerBase
     }
 
 
+
     [HttpPost]
     public async Task<IActionResult> Login([FromForm] Authentication_Login_FormModel formModel,
     [FromServices] IConfiguration configuration, [FromServices] TurnstileService turnstileService)
@@ -124,8 +125,6 @@ public class AuthenticationController : ControllerBase
         // Ask the OpenIddict client middleware to redirect the user agent to Google.
         return Challenge(properties, OpenIddictClientWebIntegrationConstants.Providers.Google);
     }
-
-
 
 
 
