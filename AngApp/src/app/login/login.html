@@ -1,5 +1,7 @@
-<form (submit)="onSubmit($event)">
-    <mat-form-field appearance="fill">
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
+
+<form [formRoot]="loginForm">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic">
         <mat-label>Username or Email</mat-label>
         <input type="text" matInput [formField]="loginForm.UsernameOrEmail">
         @for(error of loginForm.UsernameOrEmail().errors(); track error.kind){
@@ -7,7 +9,7 @@
         }
     </mat-form-field>
 
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="fill" subscriptSizing="dynamic">
         <mat-label>Password</mat-label>
         <input type="password" matInput #passwordInput [formField]="loginForm.Password">
         @if(passwordInput.type === "password"){
@@ -21,9 +23,9 @@
         }
     </mat-form-field>
 
-    @if(!loginForm.CfTurnstileResponse().hidden()){
-    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
-    <!--input hidden [formField]="loginForm.CfTurnstileResponse" /-->
+    @if(singleton.enableTurnstile()){
+
+    <input [formField]="loginForm.CfTurnstileResponse" />
     <div id="widget-container"></div>
     }
 

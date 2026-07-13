@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
-import { inject, Service } from '@angular/core';
+import { inject, Injectable, Service } from '@angular/core';
 import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Service()//@Injectable({ providedIn: 'root' })
@@ -34,6 +34,7 @@ export class MyErrorHandler {
         }
 
         this.snackBar.open(errTypeMessage, "Ok"/*, { duration: 5000 }*/);
+        console.error("in my-error-handler");
         console.error(errTypeMessage, err);
     }
 }

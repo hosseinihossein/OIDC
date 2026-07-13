@@ -1,10 +1,10 @@
-import { AfterViewInit, Component, inject, signal } from '@angular/core';
+import { AfterViewChecked, AfterViewInit, Component, effect, inject, signal, viewChildren } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { LoginService } from './login-service';
 import { NgOptimizedImage } from '@angular/common';
 import { SingletonService } from '../shared/singleton-service';
 import { form, FormField, FormRoot, hidden, minLength, required, TreeValidationResult } from '@angular/forms/signals';
-import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatFormField, MatFormFieldModule } from '@angular/material/form-field';
 import { MatInput } from '@angular/material/input';
 import { MatIcon } from "@angular/material/icon";
 import { WaitSpinner } from '../shared/wait-spinner/wait-spinner';
@@ -25,14 +25,14 @@ export interface LoginModel {
 
 @Component({
   selector: 'app-login',
-  imports: [FormField, /*FormRoot,*/ MatFormFieldModule, MatInput, MatIcon, WaitSpinner, MatButton, RouterLink,
+  imports: [FormField, FormRoot, MatFormFieldModule, MatInput, MatIcon, WaitSpinner, MatButton, RouterLink,
     NgOptimizedImage, MatFabButton, MatTooltip],
   templateUrl: './login.html',
   styleUrl: './login.css',
 })
 export class Login implements AfterViewInit {
   private loginService = inject(LoginService);
-  private singleton = inject(SingletonService);
+  singleton = inject(SingletonService);
   private activatedRoute = inject(ActivatedRoute);
   private router = inject(Router);
   private windowService = inject(WindowService);
@@ -54,68 +54,79 @@ export class Login implements AfterViewInit {
       required(schemaPath.Password, {message:"Password is required!"});
       minLength(schemaPath.Password, 5, {message:"Password must be at least 5 characters!"});
       
-      hidden(schemaPath.CfTurnstileResponse,{when: () => !this.singleton.enableTurnstile()});
-      required(schemaPath.CfTurnstileResponse, {message:"Turnstiel needs to be passed!"});
-    }/*,
+      //hidden(schemaPath.CfTurnstileResponse,{when: () => !this.singleton.enableTurnstile()});
+      //required(schemaPath.CfTurnstileResponse, {message:"Turnstiel needs to be passed!"});
+    },
     {
       submission: {
         action: async (field) => {
-          let result:TreeValidationResult|null = null;
-          this.loginService.submitLogin(field().value()).subscribe({
-            next: (event) => {
-              if(event.type === HttpEventType.Response && event.url){
-                this.windowService.nativeWindow.location.href = event.url;
-              }
-            },
-            error:(err) => {
-              if(err instanceof HttpErrorResponse && err.status == HttpStatusCode.BadRequest){
-                this.generalError.set(JSON.stringify(err.error,null,2));
-                if(err.error.Email || err.error.Username || err.error.errors?.UsernameOrEmail){
-                  result = {
-                    kind: "LoginError",
-                    message: err.error.Email || err.error.Username || err.error.errors?.UsernameOrEmail,
-                    fieldTree: field.UsernameOrEmail,
-                  };
-                }
-                else if(err.error.Password || err.error.errors?.Password){
-                  result = {
-                    kind: "LoginError",
-                    message: err.error.Password || err.error.errors?.Password,
-                    fieldTree: field.Password,
-                  };
-                }
-                else if(err.error.TurnstileError || err.error.errors?.CfTurnstileResponse){
-                  result = {
-                    kind: "LoginError",
-                    message: err.error.TurnstileError || err.error.errors?.CfTurnstileResponse,
-                    fieldTree: field.CfTurnstileResponse,
-                  };
-                }
-                else{
-                  result = {
-                    kind: "LoginError",
-                    message: JSON.stringify(err.error,null,2),
-                  };
-                }
-              }
-              else{
-                console.log(JSON.stringify(err));
-                throw(err);
-              }
-            },
+          let loginFormSearchParams = new URLSearchParams();
+          loginFormSearchParams.append("CfTurnstileResponse",field.CfTurnstileResponse().value());
+          loginFormSearchParams.append("UsernameOrEmail", field.UsernameOrEmail().value());
+          loginFormSearchParams.append("Password",field.Password().value());
+          loginFormSearchParams.append("ReturnUrl",field.ReturnUrl().value());
+
+          //try{
+          let res = await fetch("Identity/Api/Authentication/Login",{
+            method: "POST",
+            body: loginFormSearchParams,
+            /*headers: { // set by default
+              "Content-Type": "application/x-www-form-urlencoded",
+            },*/
           });
+
+          let result:TreeValidationResult|null = null;
+          if(res.ok && res.url){
+            this.windowService.nativeWindow.location.href = res.url;
+          }
+          else if(res.status === HttpStatusCode.BadRequest){
+            let err = new HttpErrorResponse({error:await res.json()});
+            if(err.error.Email || err.error.Username || err.error.errors?.UsernameOrEmail){
+              result = {
+                kind: "LoginError",
+                message: err.error.Email || err.error.Username || err.error.errors?.UsernameOrEmail,
+                fieldTree: field.UsernameOrEmail,
+              };
+            }
+            else if(err.error.Password || err.error.errors?.Password){
+              result = {
+                kind: "LoginError",
+                message: err.error.Password || err.error.errors?.Password,
+                fieldTree: field.Password,
+              };
+            }
+            else if(err.error.TurnstileError || err.error.errors?.CfTurnstileResponse){
+              result = {
+                kind: "LoginError",
+                message: err.error.TurnstileError || err.error.errors?.CfTurnstileResponse,
+                fieldTree: field.CfTurnstileResponse,
+              };
+            }
+            else{
+              result = {
+                kind: "LoginError",
+                message: JSON.stringify(err.error,null,2),
+              };
+            }
+          }
           return result;
         },
       }
-    }*/
+    }
   );
 
   constructor(){
     this.loginForm.ReturnUrl().value.set(this.activatedRoute.snapshot.queryParamMap.get("ReturnUrl") || "/");
     //this.loginForm().value().
+    
   }
+  //ngAfterViewChecked(): void {
+    //throw new Error('Method not implemented.');
+  //}
   ngAfterViewInit(): void {
-    if(this.singleton.enableTurnstile()){
+    
+    //if(this.singleton.enableTurnstile()){
+      console.log("enableTurnstile: "+this.singleton.enableTurnstile());
       this.widgetId.set(
         turnstile.render("#widget-container", {
           sitekey: this.singleton.turnstileSiteKey,
@@ -147,7 +158,7 @@ export class Login implements AfterViewInit {
           },
         })
       );
-    }
+    //}
     /*else{
       //this.cfTurnstile().clearValidators();
       //this.cfTurnstile().updateValueAndValidity();
@@ -155,51 +166,4 @@ export class Login implements AfterViewInit {
   }
 
   forgetPassword(){}
-
-  onSubmit(event:SubmitEvent){
-    event.preventDefault();
-    this.loginForm().markAsTouched();
-    if(!this.loginForm().invalid()){
-      this.loginService.submitLogin(this.loginForm().value()).subscribe({
-        next: (event) => {
-          if(event.type === HttpEventType.Response && event.url){
-            this.windowService.nativeWindow.location.href = event.url;
-          }
-        },
-        error:(err) => {
-          if(err instanceof HttpErrorResponse && err.status == HttpStatusCode.BadRequest){
-            this.generalError.set(JSON.stringify(err.error,null,2));
-            if(err.error.Email || err.error.Username || err.error.errors?.UsernameOrEmail){
-              this.generalError.set(
-                err.error.Email || 
-                err.error.Username || 
-                err.error.errors?.UsernameOrEmail
-              );
-            }
-            else if(err.error.Password || err.error.errors?.Password){
-              this.generalError.set(
-                err.error.Password || 
-                err.error.errors?.Password,
-              );
-            }
-            else if(err.error.TurnstileError || err.error.errors?.CfTurnstileResponse){
-              this.generalError.set(
-                err.error.TurnstileError || 
-                err.error.errors?.CfTurnstileResponse,
-              );
-            }
-            else{
-              this.generalError.set(
-                JSON.stringify(err.error,null,2),
-              );
-            }
-          }
-          else{
-            console.log(JSON.stringify(err));
-            throw(err);
-          }
-        },
-      });
-    }
-  }
 }
