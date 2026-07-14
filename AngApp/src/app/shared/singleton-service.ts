@@ -8,10 +8,6 @@ export class SingletonService {
     private windowService = inject(WindowService);
 
     authChekced = signal(false);
-
-    enableTurnstile = signal(true);
-    readonly turnstileSiteKey = "0x4AAAAAAAkeZ2wTzJxqgC_K";
-
     darkMode = signal(false);
 
     constructor(){
@@ -24,20 +20,6 @@ export class SingletonService {
         this.darkMode.set(false);
         this.windowService.nativeWindow.document.body.classList.remove('dark-mode');
         }
-        
-        this.checkTurnstile();
-
     }
 
-    checkTurnstile(){
-        this.httpClient.get<{enableTurnstile:boolean}>("/Identity/Api/User/EnableTurnstile").subscribe({
-            next: res => {
-                if(res /*&& res.enableTurnstile === true*/){
-                    
-                    this.enableTurnstile.set(res.enableTurnstile);
-                    //console.log("enableTurnstiel res: "+JSON.stringify(res));
-                }
-            },
-        });
-    }
 }

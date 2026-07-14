@@ -8,6 +8,7 @@ import { MatButton } from '@angular/material/button';
 import { ProfileService } from './profile-service';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
+import { RouterLink } from "@angular/router";
 
 @Component({
   selector: 'app-profile',

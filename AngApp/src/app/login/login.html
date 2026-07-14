@@ -1,11 +1,13 @@
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" defer></script>
-
 <form [formRoot]="loginForm">
     <mat-form-field appearance="fill" subscriptSizing="dynamic">
         <mat-label>Username or Email</mat-label>
         <input type="text" matInput [formField]="loginForm.UsernameOrEmail">
-        @for(error of loginForm.UsernameOrEmail().errors(); track error.kind){
-        <mat-error>{{error.message}}</mat-error>
+        @if(loginForm.UsernameOrEmail().errors().length > 0){
+        <mat-error>
+            @for(error of loginForm.UsernameOrEmail().errors(); track error.kind){
+            {{error.message}}
+            }
+        </mat-error>
         }
     </mat-form-field>
 
@@ -18,23 +20,36 @@
         @else {
         <mat-icon matSuffix (click)="passwordInput.type='password'">visibility_off</mat-icon>
         }
-        @for(error of loginForm.Password().errors(); track error.kind){
-        <mat-error>{{error.message}}</mat-error>
+        @if(loginForm.Password().errors().length > 0){
+        <mat-error>
+            @for(error of loginForm.Password().errors(); track error.kind){
+            {{error.message}}
+            }
+        </mat-error>
         }
     </mat-form-field>
 
-    @if(singleton.enableTurnstile()){
-
+    @if(turnstileService.enableTurnstile()){
     <input [formField]="loginForm.CfTurnstileResponse" />
     <div id="widget-container"></div>
     }
 
     <div>
+        @if(generalError()){
+        <p style="font-size: 14px;color: var(--mat-sys-error);">{{generalError()}}</p>
+        }
+        @if(loginForm().errors().length > 0 ){
+        <p style="font-size: 14px;color: var(--mat-sys-error);">
+            @for(error of loginForm().errors(); track error.kind){
+            {{error.message}}
+            }
+        </p>
+        }
         <button matButton="filled" id="login-btn" type="submit" [disabled]="loginForm().invalid()">Login</button>
     </div>
     <div class="clearfix" style="margin: 8px auto;">
         <button matButton id="forgetPassword-btn" (click)="forgetPassword()">Forget password?</button>
-        <a matButton id="signup-btn" [routerLink]="['/Account/Signup']">Create a new account</a>
+        <a matButton id="signup-btn" [routerLink]="['/Account/Signup']"> Create a new account</a>
     </div>
     <div style="text-align: center;font-size: 12px;margin: 16px 0;">or</div>
     <div style="margin: auto;display: flex; justify-content: space-evenly;">
@@ -51,33 +66,33 @@
         </button>
     </div>
 
-    @if(displayWaitSpinner()){
+    @if (displayWaitSpinner()) {
     <app-wait-spinner></app-wait-spinner>
     }
 </form>
 
 <!--form action="">
-    @if(singleton.enableTurnstile()){
-    <input hidden formControlName="CfTurnstileResponse" />
-    <div id="widget-container"></div>
-    }
-</form>
-
-<h1>Please Login</h1>
-
-<form action="/Identity/Api/Authentication/Login" method="post" enctype="application/x-www-form-urlencoded">
-    <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
-    <input type="text" name="UsernameOrEmail">
-    <input type="text" name="Password">
-    <button type="submit">Submit</button>
-</form>
-
-<form action="/Identity/Api/Authentication/LoginWithGitHub" method="post" enctype="application/x-www-form-urlencoded">
-    <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
-    <button type="submit">Login with GitHub</button>
-</form>
-
-<form action="/Identity/Api/Authentication/LoginWithGoogle" method="post" enctype="application/x-www-form-urlencoded">
-    <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
-    <button type="submit">Login with Google</button>
-</form-->
+            @if(singleton.enableTurnstile()){
+            <input hidden formControlName="CfTurnstileResponse" />
+            <div id="widget-container"></div>
+            }
+        </form>
+        
+        <h1>Please Login</h1>
+        
+        <form action="/Identity/Api/Authentication/Login" method="post" enctype="application/x-www-form-urlencoded">
+            <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
+            <input type="text" name="UsernameOrEmail">
+            <input type="text" name="Password">
+            <button type="submit">Submit</button>
+        </form>
+        
+        <form action="/Identity/Api/Authentication/LoginWithGitHub" method="post" enctype="application/x-www-form-urlencoded">
+            <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
+            <button type="submit">Login with GitHub</button>
+        </form>
+        
+        <form action="/Identity/Api/Authentication/LoginWithGoogle" method="post" enctype="application/x-www-form-urlencoded">
+            <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
+            <button type="submit">Login with Google</button>
+        </form-->
