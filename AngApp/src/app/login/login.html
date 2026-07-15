@@ -30,7 +30,7 @@
     </mat-form-field>
 
     @if(turnstileService.enableTurnstile()){
-    <input [formField]="loginForm.CfTurnstileResponse" />
+    <!--input [formField]="loginForm.CfTurnstileResponse" /-->
     <div id="widget-container"></div>
     }
 
@@ -48,21 +48,18 @@
         <button matButton="filled" id="login-btn" type="submit" [disabled]="loginForm().invalid()">Login</button>
     </div>
     <div class="clearfix" style="margin: 8px auto;">
-        <button matButton id="forgetPassword-btn" (click)="forgetPassword()">Forget password?</button>
+        <button type="button" matButton id="forgetPassword-btn" (click)="forgetPassword()">Forget password?</button>
         <a matButton id="signup-btn" [routerLink]="['/Account/Signup']"> Create a new account</a>
     </div>
     <div style="text-align: center;font-size: 12px;margin: 16px 0;">or</div>
     <div style="margin: auto;display: flex; justify-content: space-evenly;">
-        <button matFab matTooltip="Login with GitHub">
+        <button type="submit" form="login-with-github" matFab matTooltip="Login with GitHub">
             <img priority width="64" height="64" ngSrc="https://img.icons8.com/sf-black-filled/64/github.png"
                 alt="github" />
         </button>
-        <button matFab matTooltip="Login with Google">
+        <button type="submit" form="login-with-google" matFab matTooltip="Login with Google">
             <img priority width="48" height="48" ngSrc="https://img.icons8.com/color/48/google-logo.png"
                 alt="google-logo" />
-        </button>
-        <button matFab matTooltip="Login with Apple">
-            <img priority width="50" height="50" ngSrc="https://img.icons8.com/ios-filled/50/mac-os.png" alt="mac-os" />
         </button>
     </div>
 
@@ -71,28 +68,13 @@
     }
 </form>
 
-<!--form action="">
-            @if(singleton.enableTurnstile()){
-            <input hidden formControlName="CfTurnstileResponse" />
-            <div id="widget-container"></div>
-            }
-        </form>
-        
-        <h1>Please Login</h1>
-        
-        <form action="/Identity/Api/Authentication/Login" method="post" enctype="application/x-www-form-urlencoded">
-            <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
-            <input type="text" name="UsernameOrEmail">
-            <input type="text" name="Password">
-            <button type="submit">Submit</button>
-        </form>
-        
-        <form action="/Identity/Api/Authentication/LoginWithGitHub" method="post" enctype="application/x-www-form-urlencoded">
-            <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
-            <button type="submit">Login with GitHub</button>
-        </form>
-        
-        <form action="/Identity/Api/Authentication/LoginWithGoogle" method="post" enctype="application/x-www-form-urlencoded">
-            <input type="hidden" name="ReturnUrl" [value]="returnUrl()">
-            <button type="submit">Login with Google</button>
-        </form-->
+<form id="login-with-google" hidden action="/Identity/Api/Authentication/LoginWithGoogle" method="post"
+    enctype="application/x-www-form-urlencoded">
+    <input type="hidden" name="ReturnUrl" [value]="loginForm.ReturnUrl().value()">
+    <button type="submit">Login with Google</button>
+</form>
+<form id="login-with-github" hidden action="/Identity/Api/Authentication/LoginWithGitHub" method="post"
+    enctype="application/x-www-form-urlencoded">
+    <input type="hidden" name="ReturnUrl" [value]="loginForm.ReturnUrl().value()">
+    <button type="submit">Login with GitHub</button>
+</form>

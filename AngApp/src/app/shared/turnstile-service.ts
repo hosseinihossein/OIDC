@@ -25,6 +25,7 @@ export class TurnstileService {
     checkTurnstile(){
         this.httpClient.get<{enableTurnstile:boolean}>("/Identity/Api/User/EnableTurnstile").subscribe({
             next: res => {
+                //console.log(res);
                 if(res && res.enableTurnstile === true){
                     this.enableTurnstile.set(true);
                 }

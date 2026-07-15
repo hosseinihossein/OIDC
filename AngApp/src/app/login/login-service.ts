@@ -1,17 +1,17 @@
-import { HttpClient, HttpErrorResponse, HttpHeaders, HttpParams, HttpStatusCode } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpEventType, HttpHeaders, HttpParams, HttpStatusCode } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { LoginModel } from './login';
 import { FieldTree, TreeValidationResult } from '@angular/forms/signals';
 import { WindowService } from '../shared/window-service';
+import { ActivatedRoute } from '@angular/router';
 
 @Service()
 export class LoginService {
     private readonly httpClient = inject(HttpClient);
     private readonly windowService = inject(WindowService);
+    private activatedRoute = inject(ActivatedRoute);
 
-    /*enableTurnstile(){
-        return this.httpClient.get<{enableTurnstile:boolean}>("/Identity/Api/User/EnableTurnstile");
-    }*/
+
 
     async submitLogin(loginForm:FieldTree<LoginModel>){
         let loginFormSearchParams = new URLSearchParams();
@@ -20,7 +20,6 @@ export class LoginService {
         loginFormSearchParams.append("Password",loginForm.Password().value());
         loginFormSearchParams.append("ReturnUrl",loginForm.ReturnUrl().value());
 
-        //try{
         let res = await fetch("Identity/Api/Authentication/Login",{
         method: "POST",
         body: loginFormSearchParams,

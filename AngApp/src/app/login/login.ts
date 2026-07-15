@@ -27,7 +27,7 @@ export interface LoginModel {
   styleUrl: './login.css',
 })
 export class Login {
-  private loginService = inject(LoginService);
+  loginService = inject(LoginService);
   singleton = inject(SingletonService);
   private activatedRoute = inject(ActivatedRoute);
   turnstileService = inject(TurnstileService);
@@ -40,7 +40,7 @@ export class Login {
     UsernameOrEmail: "",
     Password: "",
     CfTurnstileResponse: "",
-    ReturnUrl: "",
+    ReturnUrl: this.activatedRoute.snapshot.queryParamMap.get("ReturnUrl") || "/",
   });
   loginForm = form(this.loginModel,
     (schemaPath)=>{
@@ -66,8 +66,6 @@ export class Login {
   );
 
   constructor(){
-    this.loginForm.ReturnUrl().value.set(this.activatedRoute.snapshot.queryParamMap.get("ReturnUrl") || "/");
-    
     afterRenderEffect({
       write:()=>{
         if(this.turnstileService.enableTurnstile() && !this.turnstileService.widgetId()){
@@ -78,5 +76,6 @@ export class Login {
   }
 
   forgetPassword(){}
+
 
 }
