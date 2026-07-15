@@ -192,9 +192,9 @@ public class AuthenticationController : ControllerBase
             var userByEmail = await _userManager.FindByEmailAsync(userEmail!);
             if (userByEmail is null)
             {
-                var username = "GitHub_"
-                + (result.Principal.GetClaim("login") ?? result.Principal.GetClaim(ClaimTypes.Name))
-                + "_" + providerKey;
+                var username =
+                (result.Principal.GetClaim("login") ?? result.Principal.GetClaim(ClaimTypes.Name))
+                + "_GitHub_" + providerKey;
                 username = Regex.Replace(username, @"[^a-zA-Z0-9._]", "");
                 //MyRegex().Replace();Doesn't work, I don't know why
                 //Console.WriteLine($"username: {username}");
@@ -258,9 +258,9 @@ public class AuthenticationController : ControllerBase
             var userByEmail = await _userManager.FindByEmailAsync(userEmail!);
             if (userEmail is null)
             {
-                var username = "Google_"
-                + (result.Principal.GetClaim(Claims.Username) ?? result.Principal.GetClaim(ClaimTypes.Name))
-                + "_" + providerKey;
+                var username =
+                (result.Principal.GetClaim(Claims.Username) ?? result.Principal.GetClaim(ClaimTypes.Name))
+                + "_Google_" + providerKey;
                 username = Regex.Replace(username, @"[^a-zA-Z0-9._]", "");
                 //MyRegex().Replace();
                 //Console.WriteLine($"username: {username}");

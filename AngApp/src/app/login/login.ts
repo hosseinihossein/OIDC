@@ -32,7 +32,7 @@ export class Login {
   private activatedRoute = inject(ActivatedRoute);
   turnstileService = inject(TurnstileService);
 
-  displayWaitSpinner = signal(false);
+  displayWait = signal(false);
   widgetId = signal("");
   generalError = signal<string>("");
 
@@ -48,14 +48,13 @@ export class Login {
       
       required(schemaPath.Password, {message:"Password is required!"});
       minLength(schemaPath.Password, 5, {message:"Password must be at least 5 characters!"});
-      
-      //hidden(schemaPath.CfTurnstileResponse,{when: () => !this.singleton.enableTurnstile()});
-      //required(schemaPath.CfTurnstileResponse, {message:"Turnstiel needs to be passed!"});
     },
     {
       submission: {
         action: async (field) => {
+          this.displayWait.set(true);
           let result = await this.loginService.submitLogin(field);
+          this.displayWait.set(false);
           if(result){
             this.turnstileService.reset();
           }

@@ -1,10 +1,10 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, effect, inject, linkedSignal, signal } from '@angular/core';
 import { OidcSecurityService } from 'angular-auth-oidc-client';
 import { WaitSpinner } from '../shared/wait-spinner/wait-spinner';
 import { AsyncPipe, DatePipe, JsonPipe, NgOptimizedImage } from '@angular/common';
 import { SingletonService } from '../shared/singleton-service';
 import { MatCard, MatCardHeader, MatCardModule } from '@angular/material/card';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatIconButton, MatMiniFabButton } from '@angular/material/button';
 import { ProfileService } from './profile-service';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
@@ -12,7 +12,7 @@ import { RouterLink } from "@angular/router";
 
 @Component({
   selector: 'app-profile',
-  imports: [WaitSpinner, DatePipe, MatCardModule, MatButton, NgOptimizedImage, MatIcon, MatTooltip],
+  imports: [WaitSpinner, DatePipe, MatCardModule, MatButton, NgOptimizedImage, MatIcon, MatTooltip, MatIconButton, MatMiniFabButton],
   templateUrl: './profile.html',
   styleUrl: './profile.css',
 })
@@ -21,42 +21,48 @@ export class Profile {
   private readonly singleton = inject(SingletonService);
   private readonly profileService = inject(ProfileService);
 
-  stopWaiting = computed(()=>this.singleton.authChekced());
+  displayWait = linkedSignal(()=>!this.singleton.authChekced());
   idToken = signal<any>(null);
   profileModel = signal<Profile_Model|null>(null);
   profileImgSrc = computed(()=>this.profileService.getProfileImageAddress(this.profileModel()));
+  editMode = signal(false);
 
   constructor(){
     effect(()=>{
       if(this.oidcSecurityService.authenticated().isAuthenticated){
         this.oidcSecurityService.getPayloadFromIdToken().subscribe(token=>{
           this.idToken.set(token);
-          if(token?.sub){
-            this.profileService.getProfileModel(token.sub).subscribe({
-              next: res => {
-                if(res){
-                  this.profileModel.set(res);
-                }
-              },
-            });
-          }
         });
+      }
+      else{
+        this.idToken.set(null);
+      }
+    });
+    effect(()=>{
+      if(this.idToken() && this.idToken().sub){
+        this.profileService.getProfileModel(this.idToken().sub).subscribe({
+          next: res => {
+            this.profileModel.set(res);
+            this.displayWait.set(false);
+          },
+        });
+      }
+      else{
+        this.profileModel.set(null);
+        this.displayWait.set(false);
       }
     });
   }
-  /*ngOnInit(): void {
-    if(this.singleton.authChekced()){
-      this.stopWaiting.set(true);
-    }
-  }*/
 
   login() {
     // User clicked sign-in: redirect to the identity provider.
     this.oidcSecurityService.authorize();
+    this.displayWait.set(true);
   }
 
   logout() {
     this.oidcSecurityService.logoff().subscribe((result) => console.log(result));
+    this.displayWait.set(true);
   }
 }
 

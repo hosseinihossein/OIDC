@@ -17,7 +17,7 @@ namespace AspApp.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Description = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    Description = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     Name = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     ConcurrencyStamp = table.Column<string>(type: "text", nullable: true)
@@ -32,12 +32,12 @@ namespace AspApp.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    DisplayName = table.Column<string>(type: "text", nullable: true),
-                    Description = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    DisplayName = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: true),
+                    Description = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true),
                     PublicEmail = table.Column<bool>(type: "boolean", nullable: false),
                     _imageVersion = table.Column<byte>(type: "smallint", nullable: false),
                     HasImage = table.Column<bool>(type: "boolean", nullable: false),
-                    RemoteImageUrl = table.Column<string>(type: "text", nullable: true),
+                    RemoteImageUrl = table.Column<string>(type: "character varying(1024)", maxLength: 1024, nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),

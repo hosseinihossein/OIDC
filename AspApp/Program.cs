@@ -406,6 +406,7 @@ public class Program
                 admin = new Identity_UserDbModel
                 {
                     UserName = "admin",
+                    DisplayName = "Admin",
                     Description = "This user account belongs to the admin of the app.",
                     Email = "admin@HoLibz.com",
                     EmailConfirmed = true,
@@ -429,11 +430,6 @@ public class Program
                 await roleManager.CreateAsync(new Identity_RoleDbModel("Identity_Admins"));
                 await userManager.AddToRoleAsync(admin, "Identity_Admins");
             }
-            /*if (await roleManager.FindByNameAsync("Test_Role") == null)
-            {
-                await roleManager.CreateAsync(new Identity_RoleDbModel("Test_Role"));
-                await userManager.AddToRoleAsync(admin, "Test_Role");
-            }*/
 
 
 

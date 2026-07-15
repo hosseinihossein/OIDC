@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using AspApp.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -67,6 +68,245 @@ public class UserController : ControllerBase
         return Ok(profileModel);
     }
 
+
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> EditUsername([FromBody][StringLength(64)] string Username)
+    {
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        if (user is null)
+        {
+            return Forbid(
+                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
+                })
+            );
+        }
+
+        IdentityResult result = await _userManager.SetUserNameAsync(user, Username);
+        if (result.Succeeded)
+        {
+            return Ok();
+        }
+        else
+        {
+            foreach (IdentityError error in result.Errors)
+            {
+                ModelState.AddModelError(nameof(Username), error.Description);
+            }
+            return BadRequest(ModelState);
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> EditDisplayName([FromBody][StringLength(64)] string DisplayName)
+    {
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        if (user is null)
+        {
+            return Forbid(
+                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
+                })
+            );
+        }
+
+        user.DisplayName = DisplayName;
+        IdentityResult result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+        {
+            return Ok();
+        }
+        else
+        {
+            foreach (IdentityError error in result.Errors)
+            {
+                ModelState.AddModelError(nameof(DisplayName), error.Description);
+            }
+            return BadRequest(ModelState);
+        }
+    }
+
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> ChangeEmail([FromBody][StringLength(128)] string NewEmail)
+    {
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        if (user is null)
+        {
+            return Forbid(
+                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
+                })
+            );
+        }
+
+        string token = await _userManager.GenerateChangeEmailTokenAsync(user, NewEmail);
+
+        //create an email message with the confirm-new-email link and send it to the new email address
+
+        return Ok();
+    }
+
+    [HttpPost]//can send a post request with link anchor?
+    [Authorize]
+    public async Task<IActionResult> ConfirmNewEmail([FromQuery][StringLength(128)] string newEmail,
+    [FromQuery][StringLength(2048)/*how long is change email token*/] string token)
+    {
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        if (user is null)
+        {
+            return Forbid(
+                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
+                })
+            );
+        }
+
+        IdentityResult result = await _userManager.ChangeEmailAsync(user, newEmail, token);
+        if (result.Succeeded)
+        {
+            return Redirect("/");
+        }
+        else
+        {
+            return Redirect($"/Error?{result.Errors.SelectMany(e => e.Description + ",,")}");
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> SendEmailValidationCode()
+    {
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        if (user is null)
+        {
+            return Forbid(
+                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
+                })
+            );
+        }
+
+        string token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+
+        //create an email message with the confirm-email link and send it to the user's email address
+
+        return Ok();
+    }
+
+    [HttpPost]//can send a post request with link anchor?
+    [Authorize]
+    public async Task<IActionResult> ConfirmEmail([FromQuery][StringLength(2048)/*how long is change email token*/] string token)
+    {
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        if (user is null)
+        {
+            return Forbid(
+                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
+                })
+            );
+        }
+
+        IdentityResult result = await _userManager.ConfirmEmailAsync(user, token);
+        if (result.Succeeded)
+        {
+            return Redirect("/");
+        }
+        else
+        {
+            return Redirect($"/Error?{result.Errors.SelectMany(e => e.Description + ",,")}");
+        }
+    }
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> PublicEmail([FromBody] bool PublicEmail)
+    {
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        if (user is null)
+        {
+            return Forbid(
+                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
+                })
+            );
+        }
+
+        user.PublicEmail = PublicEmail;
+        IdentityResult result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+        {
+            return Ok();
+        }
+        else
+        {
+            foreach (IdentityError error in result.Errors)
+            {
+                ModelState.AddModelError(nameof(PublicEmail), error.Description);
+            }
+            return BadRequest(ModelState);
+        }
+    }
+
+
+    [HttpPost]
+    [Authorize]
+    public async Task<IActionResult> EditDescription([FromBody][StringLength(1024)] string Description)
+    {
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        if (user is null)
+        {
+            return Forbid(
+                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+                properties: new AuthenticationProperties(new Dictionary<string, string?>
+                {
+                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
+                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
+                })
+            );
+        }
+
+        user.Description = Description;
+        IdentityResult result = await _userManager.UpdateAsync(user);
+        if (result.Succeeded)
+        {
+            return Ok();
+        }
+        else
+        {
+            foreach (IdentityError error in result.Errors)
+            {
+                ModelState.AddModelError(nameof(Description), error.Description);
+            }
+            return BadRequest(ModelState);
+        }
+    }
 
 
 
