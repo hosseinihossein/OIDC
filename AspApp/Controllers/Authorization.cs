@@ -66,7 +66,7 @@ public class AuthorizationController : ControllerBase
         // authentication options shouldn't be used, a specific scheme can be specified here.
         var authResult = await HttpContext.AuthenticateAsync();
 
-        if (authResult is not { Succeeded: true } ||
+        if (!authResult.Succeeded ||
         (openIddictRequest.HasPromptValue(PromptValues.Login) ||
          openIddictRequest.MaxAge is 0 ||
          (openIddictRequest.MaxAge is not null && authResult.Properties?.IssuedUtc is not null &&
@@ -99,10 +99,21 @@ public class AuthorizationController : ControllerBase
 
             // For scenarios where the default challenge handler configured in the ASP.NET Core
             // authentication options shouldn't be used, a specific scheme can be specified here.
+            Console.WriteLine($"\n***** Authorize -> challenge *****");
+            Console.WriteLine($"\n***** authResult.Succeeded = {authResult.Succeeded}");
+            Console.WriteLine($"\n***** openIddictRequest.HasPromptValue(PromptValues.Login) = {openIddictRequest.HasPromptValue(PromptValues.Login)}");
+            Console.WriteLine($"\n***** openIddictRequest.MaxAge = {openIddictRequest.MaxAge}");
+            Console.WriteLine($"\n***** authResult.Properties?.IssuedUtc = {authResult.Properties?.IssuedUtc}");
+            Console.WriteLine($"\n***** TimeProvider.System.GetUtcNow() - authResult.Properties?.IssuedUtc = {TimeProvider.System.GetUtcNow() - authResult.Properties?.IssuedUtc}");
+            Console.WriteLine($"\n***** TimeSpan.FromSeconds((double)openIddictRequest.MaxAge!.Value) = {TimeSpan.FromSeconds((double)openIddictRequest.MaxAge!.Value)}");
+
+            string myUrl = Request.PathBase + Request.Path +
+            QueryString.Create(Request.HasFormContentType ? Request.Form : Request.Query);
+            Console.WriteLine($"\n***** myUrl = {myUrl}");
+
             return Challenge(new AuthenticationProperties
             {
-                RedirectUri = Request.PathBase + Request.Path +
-                QueryString.Create(Request.HasFormContentType ? Request.Form : Request.Query),
+                RedirectUri = myUrl,
             });
         }
 

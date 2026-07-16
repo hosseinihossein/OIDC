@@ -21,7 +21,9 @@ public class AuthenticationController : ControllerBase
     private readonly UserManager<Identity_UserDbModel> _userManager;
     private readonly IHttpClientFactory _httpClientFactory;
 
-    private readonly string[] _googleScope = [Scopes.Email];//[Scopes.OpenId, Scopes.Email, Scopes.Profile];
+    private readonly string[] _googleScopeEmail = [Scopes.Email];//[Scopes.OpenId, Scopes.Email, Scopes.Profile];
+    private readonly string[] _googleScopeProfile = [Scopes.Profile];//[Scopes.OpenId, Scopes.Email, Scopes.Profile];
+    private readonly string[] _googleScope = [Scopes.Email, Scopes.Profile];//[Scopes.OpenId, Scopes.Email, Scopes.Profile];
     private readonly string[] _gitHubScopes = ["read:user", "user:email"];
 
 
@@ -120,7 +122,7 @@ public class AuthenticationController : ControllerBase
             // Only allow local return URLs to prevent open redirect attacks.(I don't know about this)
             RedirectUri = formModel.ReturnUrl ?? "/"
         };
-        properties.SetParameter("scope", _googleScope);
+        properties.SetParameter("scope", _googleScopeEmail);
 
         // Ask the OpenIddict client middleware to redirect the user agent to Google.
         return Challenge(properties, OpenIddictClientWebIntegrationConstants.Providers.Google);
@@ -165,14 +167,14 @@ public class AuthenticationController : ControllerBase
 
         string? userEmail = null;
         bool emailVerified = false;
-        string? emailVisibility = "private";
+        //string? emailVisibility = "private";
         foreach (var emailEntry in jsonDoc.RootElement.EnumerateArray())
         {
             if (emailEntry.GetProperty("primary").GetBoolean())
             {
                 userEmail = emailEntry.GetProperty("email").GetString();
                 emailVerified = emailEntry.GetProperty("verified").GetBoolean();
-                emailVisibility = emailEntry.GetProperty("visibility").GetString();
+                //emailVisibility = emailEntry.GetProperty("visibility").GetString();
                 break;
             }
         }
@@ -192,13 +194,20 @@ public class AuthenticationController : ControllerBase
             var userByEmail = await _userManager.FindByEmailAsync(userEmail!);
             if (userByEmail is null)
             {
-                var username =
-                (result.Principal.GetClaim("login") ?? result.Principal.GetClaim(ClaimTypes.Name))
-                + "_GitHub_" + providerKey;
+                //throw new Exception("my exception");
+                var username = result.Principal.GetClaim("login")
+                + "_" + Guid.NewGuid().ToString("N");
                 username = Regex.Replace(username, @"[^a-zA-Z0-9._]", "");
                 //MyRegex().Replace();Doesn't work, I don't know why
                 //Console.WriteLine($"username: {username}");
-                user = new() { UserName = username, Email = userEmail, EmailConfirmed = emailVerified };
+                user = new()
+                {
+                    UserName = username,
+                    Email = userEmail,
+                    EmailConfirmed = emailVerified,
+                    DisplayName = result.Principal.GetClaim("name"),
+                    RemoteImageUrl = result.Principal.GetClaim("avatar_url"),
+                };
                 var userCreationResult = await _userManager.CreateAsync(user);
                 if (!userCreationResult.Succeeded)
                 {
@@ -249,26 +258,28 @@ public class AuthenticationController : ControllerBase
         }
 
         string userEmail = result.Principal.GetClaim(ClaimTypes.Email)!;
+        string userDisplayName = userEmail.Substring(0, userEmail.IndexOf('@'));
         string loginProvider = "Google";
         string providerKey = result.Principal.GetClaim(ClaimTypes.NameIdentifier)!;
         UserLoginInfo userLoginInfo = new(loginProvider, providerKey, loginProvider);
         var user = await _userManager.FindByLoginAsync(loginProvider, providerKey);
         if (user is null)
         {
-            var userByEmail = await _userManager.FindByEmailAsync(userEmail!);
-            if (userEmail is null)
+            var userByEmail = await _userManager.FindByEmailAsync(userEmail);
+            if (userByEmail is null)
             {
-                var username =
-                (result.Principal.GetClaim(Claims.Username) ?? result.Principal.GetClaim(ClaimTypes.Name))
-                + "_Google_" + providerKey;
+                //throw new Exception("my exception");
+                var username = userDisplayName + "_" + Guid.NewGuid().ToString("N");
                 username = Regex.Replace(username, @"[^a-zA-Z0-9._]", "");
                 //MyRegex().Replace();
                 //Console.WriteLine($"username: {username}");
                 user = new()
                 {
                     UserName = username,
-                    Email = result.Principal.GetClaim(ClaimTypes.Email),
-                    EmailConfirmed = true,
+                    Email = userEmail,
+                    EmailConfirmed = bool.Parse(result.Principal.GetClaims("email_verified")[0].ToLower()),
+                    RemoteImageUrl = result.Principal.GetClaim("picture"),
+                    DisplayName = userDisplayName,
                 };
                 var userCreationResult = await _userManager.CreateAsync(user);
                 if (!userCreationResult.Succeeded)

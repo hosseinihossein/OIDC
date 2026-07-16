@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net;
 using AspApp.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -34,7 +35,7 @@ public class UserController : ControllerBase
     [Authorize]//(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
     public async Task<IActionResult> ProfileModel()
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
         {
             //ModelState.AddModelError("UserId", "Couldn't find any user with the specified user id.");
@@ -74,7 +75,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> EditUsername([FromBody][StringLength(64)] string Username)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
         {
             return Forbid(
@@ -106,7 +107,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> EditDisplayName([FromBody][StringLength(64)] string DisplayName)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
         {
             return Forbid(
@@ -140,7 +141,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ChangeEmail([FromBody][StringLength(128)] string NewEmail)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
         {
             return Forbid(
@@ -154,18 +155,19 @@ public class UserController : ControllerBase
         }
 
         string token = await _userManager.GenerateChangeEmailTokenAsync(user, NewEmail);
+        string encodedToken = WebUtility.UrlEncode(token);
 
         //create an email message with the confirm-new-email link and send it to the new email address
 
         return Ok();
     }
 
-    [HttpPost]//can send a post request with link anchor?
+    [HttpGet]
     [Authorize]
     public async Task<IActionResult> ConfirmNewEmail([FromQuery][StringLength(128)] string newEmail,
-    [FromQuery][StringLength(2048)/*how long is change email token*/] string token)
+    [FromQuery][StringLength(256)] string token)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
         {
             return Forbid(
@@ -178,7 +180,8 @@ public class UserController : ControllerBase
             );
         }
 
-        IdentityResult result = await _userManager.ChangeEmailAsync(user, newEmail, token);
+        string decodedToken = WebUtility.UrlDecode(token);
+        IdentityResult result = await _userManager.ChangeEmailAsync(user, newEmail, decodedToken);
         if (result.Succeeded)
         {
             return Redirect("/");
@@ -193,7 +196,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> SendEmailValidationCode()
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
         {
             return Forbid(
@@ -207,17 +210,18 @@ public class UserController : ControllerBase
         }
 
         string token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
+        string encodedToken = WebUtility.UrlEncode(token);
 
         //create an email message with the confirm-email link and send it to the user's email address
 
         return Ok();
     }
 
-    [HttpPost]//can send a post request with link anchor?
+    [HttpGet]
     [Authorize]
-    public async Task<IActionResult> ConfirmEmail([FromQuery][StringLength(2048)/*how long is change email token*/] string token)
+    public async Task<IActionResult> ConfirmEmail([FromQuery][StringLength(256)] string token)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
         {
             return Forbid(
@@ -230,7 +234,8 @@ public class UserController : ControllerBase
             );
         }
 
-        IdentityResult result = await _userManager.ConfirmEmailAsync(user, token);
+        string decodedToken = WebUtility.UrlDecode(token);
+        IdentityResult result = await _userManager.ConfirmEmailAsync(user, decodedToken);
         if (result.Succeeded)
         {
             return Redirect("/");
@@ -245,7 +250,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> PublicEmail([FromBody] bool PublicEmail)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
         {
             return Forbid(
@@ -279,7 +284,7 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> EditDescription([FromBody][StringLength(1024)] string Description)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);//FindByIdAsync(User.GetClaim(Claims.Subject)!);
+        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
         {
             return Forbid(
