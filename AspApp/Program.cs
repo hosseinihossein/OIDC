@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using AspApp.Helpers;
 using AspApp.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.StaticFiles;
@@ -259,7 +260,7 @@ public class Program
         {
             options.Cookie.HttpOnly = true; // prevent from js access
             options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // https only
-            options.Cookie.SameSite = SameSiteMode.Strict;// csrf protection
+            options.Cookie.SameSite = SameSiteMode.None;// no csrf protection to solve strict tracking prevention mechanisms
 
             //Default for "Remember Me". Without "Remember Me" → Session cookie (expires when browser closes)
             options.ExpireTimeSpan = TimeSpan.FromDays(14);
@@ -268,27 +269,6 @@ public class Program
             //options.LoginPath = "/Account/Login";
             //options.AccessDeniedPath = "/Account/AccessDenied";
         });
-
-        //options =>
-        //{
-        //wrong, local server should use cookie for authentication
-        //options.DefaultAuthenticateScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-        //options.DefaultChallengeScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-        //options.DefaultScheme = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme;
-        //}
-        /*builder.Services.AddAuthentication()
-        .AddCookie(options =>
-        {
-            options.Cookie.HttpOnly = true; // prevent from js access
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always; // https only
-            options.Cookie.SameSite = SameSiteMode.Strict;// csrf protection
-
-            options.ExpireTimeSpan = TimeSpan.FromDays(14);
-            options.SlidingExpiration = true;
-
-            //options.LoginPath = "/Account/Login";
-            //options.AccessDeniedPath = "/Account/AccessDenied";
-        });*/
 
 
 

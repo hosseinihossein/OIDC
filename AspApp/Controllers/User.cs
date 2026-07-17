@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Net;
+using AspApp.Filters;
 using AspApp.Models;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,17 @@ public class UserController : ControllerBase
     }
 
 
+
+    [HttpGet]
+    [GenerateAntiforgeryTokenCookie]
+    [Authorize]
+    public IActionResult GetCsrf()
+    {
+        return Ok();
+    }
+
+
+
     [HttpGet]
     public IActionResult EnableTurnstile([FromServices] IConfiguration configuration)
     {
@@ -32,7 +44,7 @@ public class UserController : ControllerBase
 
 
     [HttpGet]
-    [Authorize]//(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
+    [Authorize]
     public async Task<IActionResult> ProfileModel()
     {
         var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
@@ -73,7 +85,8 @@ public class UserController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> EditUsername([FromBody][StringLength(64)] string Username)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditUsername([FromForm][StringLength(64)] string Username)
     {
         var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
@@ -105,7 +118,8 @@ public class UserController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> EditDisplayName([FromBody][StringLength(64)] string DisplayName)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditDisplayName([FromForm][StringLength(64)] string DisplayName)
     {
         var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
@@ -139,7 +153,8 @@ public class UserController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> ChangeEmail([FromBody][StringLength(128)] string NewEmail)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> ChangeEmail([FromForm][StringLength(128)] string NewEmail)
     {
         var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
@@ -194,6 +209,7 @@ public class UserController : ControllerBase
 
     [HttpPost]
     [Authorize]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendEmailValidationCode()
     {
         var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
@@ -248,7 +264,8 @@ public class UserController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> PublicEmail([FromBody] bool PublicEmail)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> PublicEmail([FromForm] bool PublicEmail)
     {
         var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)
@@ -282,7 +299,8 @@ public class UserController : ControllerBase
 
     [HttpPost]
     [Authorize]
-    public async Task<IActionResult> EditDescription([FromBody][StringLength(1024)] string Description)
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditDescription([FromForm][StringLength(1024)] string Description)
     {
         var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
         if (user is null)

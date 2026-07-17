@@ -10,13 +10,7 @@ public class AdministrationCoontrollers : ControllerBase
     public AdministrationCoontrollers() { }
 
 
-    [HttpGet]
-    [GenerateAntiforgeryTokenCookie]
-    [Authorize]//(AuthenticationSchemes = OpenIddictValidationAspNetCoreDefaults.AuthenticationScheme)]
-    public IActionResult GetCsrf()
-    {
-        return Ok();
-    }
+
 
 
 

@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Text.Json;
 using AspApp.Helpers;
 using AspApp.Models;
 using Microsoft.AspNetCore;
@@ -105,9 +106,26 @@ public class AuthorizationController : ControllerBase
             Console.WriteLine($"\n***** openIddictRequest.MaxAge = {openIddictRequest.MaxAge}");
             Console.WriteLine($"\n***** authResult.Properties?.IssuedUtc = {authResult.Properties?.IssuedUtc}");
             Console.WriteLine($"\n***** TimeProvider.System.GetUtcNow() - authResult.Properties?.IssuedUtc = {TimeProvider.System.GetUtcNow() - authResult.Properties?.IssuedUtc}");
-            Console.WriteLine($"\n***** TimeSpan.FromSeconds((double)openIddictRequest.MaxAge!.Value) = {TimeSpan.FromSeconds((double)openIddictRequest.MaxAge!.Value)}");
+            if (openIddictRequest.MaxAge is not null)
+            {
+                Console.WriteLine($"\n***** TimeSpan.FromSeconds((double)openIddictRequest.MaxAge.Value) = {TimeSpan.FromSeconds((double)openIddictRequest.MaxAge.Value)}");
+            }
+            Console.WriteLine($"\n***** authResult.Failure?.Message = {authResult.Failure?.Message}");
 
-            string myUrl = Request.PathBase + Request.Path +
+            if (User.Identity is not null)
+            {
+                Console.WriteLine($"\n***** User.Identity.Name = {User.Identity.Name}");
+                Console.WriteLine($"\n***** User.Identity.IsAuthenticated = {User.Identity.IsAuthenticated}");
+                Console.WriteLine($"\n***** User.Identity.AuthenticationType = {User.Identity.AuthenticationType}");
+            }
+            else
+            {
+                Console.WriteLine($"\n***** User.Identity is null");
+            }
+            Console.WriteLine($"\n***** Cookies = {JsonSerializer.Serialize(Request.Cookies.ToDictionary())}");
+
+
+            string myUrl = /*Request.Scheme + "://" + Request.Host + */Request.PathBase + Request.Path +
             QueryString.Create(Request.HasFormContentType ? Request.Form : Request.Query);
             Console.WriteLine($"\n***** myUrl = {myUrl}");
 
@@ -116,6 +134,7 @@ public class AuthorizationController : ControllerBase
                 RedirectUri = myUrl,
             });
         }
+        Console.WriteLine($"\n***** Cookies = {JsonSerializer.Serialize(Request.Cookies.ToDictionary())}");
 
         // Retrieve the profile of the logged in user.
         var user = await _userManager.GetUserAsync(authResult.Principal);
@@ -331,7 +350,11 @@ public class AuthorizationController : ControllerBase
     [HttpPost("~/Identity/Api/Authorization/Authorize")/*, ValidateAntiForgeryToken*/]
     // Notify OpenIddict that the authorization grant has been denied by the resource owner
     // to redirect the user agent to the client application using the appropriate response_mode.
-    public IActionResult Deny() => Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    public async Task<IActionResult> Deny() //=> Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
+    {
+        await _signInManager.SignOutAsync();
+        return Redirect("/");
+    }
 
 
 

@@ -229,7 +229,7 @@ public class AuthenticationController : ControllerBase
         var exSigninResult = await _signInManager.ExternalLoginSignInAsync(loginProvider, providerKey, true);
         //Console.WriteLine($"***** exSigninResult: {exSigninResult}");
 
-        return Redirect(result.Properties.RedirectUri ?? "/Identity/Authorize");
+        return LocalRedirect(result.Properties.RedirectUri ?? "/");
     }
 
 
@@ -269,7 +269,7 @@ public class AuthenticationController : ControllerBase
             if (userByEmail is null)
             {
                 //throw new Exception("my exception");
-                var username = userDisplayName + "_" + Guid.NewGuid().ToString("N");
+                string username = userDisplayName + "_" + Guid.NewGuid().ToString("N");
                 username = Regex.Replace(username, @"[^a-zA-Z0-9._]", "");
                 //MyRegex().Replace();
                 //Console.WriteLine($"username: {username}");
@@ -295,14 +295,14 @@ public class AuthenticationController : ControllerBase
             {
                 user = userByEmail;
             }
-            var addLoginResult = await _userManager.AddLoginAsync(user!, userLoginInfo);
+            var addLoginResult = await _userManager.AddLoginAsync(user, userLoginInfo);
             //Console.WriteLine($"addLoginResult: {addLoginResult}");
         }
 
         var exSigninResult = await _signInManager.ExternalLoginSignInAsync(loginProvider, providerKey, true);
-        //Console.WriteLine($"exSigninResult: {exSigninResult}");
+        //Console.WriteLine($"exSigninResult: {JsonSerializer.Serialize(exSigninResult)}");
 
-        return Redirect(result.Properties.RedirectUri ?? "/");
+        return LocalRedirect(result.Properties.RedirectUri ?? "/");
     }
 
 
