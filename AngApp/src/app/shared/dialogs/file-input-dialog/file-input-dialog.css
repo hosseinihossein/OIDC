@@ -1,0 +1,27 @@
+mat-form-field{
+    width: 100%;
+}
+mat-dialog-content{
+    width: 400px;
+}
+button#imageSelectButton{
+    margin: 88px 8px 0px;
+}
+#img-box{
+    margin: 4px auto;
+    width: fit-content;
+}
+#img-box img{
+    width: 150px;
+    height: 150px;
+    object-fit: contain;
+    float: left;
+}
+
+button#fileSelectButton{
+    margin: 8px;
+}
+#file-box{
+    margin: 4px auto;
+    width: fit-content;
+}

@@ -1,4 +1,5 @@
 [Ang]
+- create dialog for each input type (ex: text, number, email, password ...)
 - 
 
 [Asp]
