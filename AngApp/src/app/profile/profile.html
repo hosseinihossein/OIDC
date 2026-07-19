@@ -13,7 +13,9 @@
             <mat-icon style="font-size: 100px;width: 100px;height: 100px;">account_circle</mat-icon>
             }
             @if(editMode()){
-            <button matIconButton matTooltip="Edit image"><mat-icon>edit</mat-icon></button>
+            <button matIconButton matTooltip="Edit image" (click)="editProfileImage()">
+                <mat-icon>edit</mat-icon>
+            </button>
             }
         </div>
         <div style="float: inline-start;position: relative;">

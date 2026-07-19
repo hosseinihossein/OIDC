@@ -9,6 +9,8 @@ import { ProfileService } from './profile-service';
 import { MatIcon } from '@angular/material/icon';
 import { MatTooltip } from '@angular/material/tooltip';
 import { RouterLink } from "@angular/router";
+import { MatDialog } from '@angular/material/dialog';
+import { FileInputDialog, FileInputDialogModel } from '../shared/dialogs/file-input-dialog/file-input-dialog';
 
 @Component({
   selector: 'app-profile',
@@ -20,6 +22,7 @@ export class Profile {
   readonly oidcSecurityService = inject(OidcSecurityService);
   private readonly singleton = inject(SingletonService);
   private readonly profileService = inject(ProfileService);
+  readonly dialog = inject(MatDialog);
 
   displayWait = linkedSignal(()=>!this.singleton.authChekced());
   idToken = signal<any>(null);
@@ -64,6 +67,52 @@ export class Profile {
     this.oidcSecurityService.logoff().subscribe((result) => console.log(result));
     this.displayWait.set(true);
   }
+
+  editProfileImage(){
+    if(!this.profileModel()) return;
+
+    let dialogData = new FileInputDialogModel();
+    dialogData.canDelete = true;
+    dialogData.hasTitle = false;
+    dialogData.hasCaption = false;
+    dialogData.type = "image";
+    dialogData.value = this.profileImgSrc() ?? "";
+    dialogData.maxSize = 120 * 1024;
+
+    this.dialog.open(FileInputDialog, { data: dialogData, }).afterClosed().subscribe(result=>{
+      if(result === "Delete"){
+        this.profileService.deleteUserImage().subscribe({
+          next: res => {
+            if(res && res.success){
+              this.profileModel.update(p=>{
+                const newProfileModel = new Profile_Model(p!);
+                newProfileModel.hasImage = false;
+                newProfileModel.imageVersion = 0;
+                newProfileModel.remoteImageUrl = null;
+                return newProfileModel;
+              });
+            }
+          },
+        });
+      }
+      else if(result && result.file && result.file instanceof File){
+        let userImage = result.file as File;
+        this.profileService.postUserImage(userImage).subscribe({
+          next: res => {
+            if(res && res.success){
+              this.profileModel.update(p=>{
+                const newProfileModel = new Profile_Model(p!);
+                newProfileModel.hasImage = res.hasImage;
+                newProfileModel.imageVersion = res.imageVersion;
+                return newProfileModel;
+              });
+            }
+          },
+        });
+      }
+    });
+  }
+
 }
 
 export class Profile_Model {
@@ -72,12 +121,12 @@ export class Profile_Model {
     this.username = data?.username ?? "";
     this.email = data?.email ?? "";
     this.emailConfirmed = data?.emailConfirmed ?? false;
-    this.displayName = data?.displayName ?? "";
-    this.description = data?.description ?? "";
+    this.displayName = data?.displayName;
+    this.description = data?.description;
     this.publicEmail = data?.publicEmail ?? false;
     this.imageVersion = data?.imageVersion ?? 0;
     this.hasImage = data?.hasImage ?? false;
-    this.remoteImageUrl = data?.remoteImageUrl ?? "";
+    this.remoteImageUrl = data?.remoteImageUrl;
     this.createdAt = data?.createdAt ?? new Date();
     this.roles = [... data?.roles ?? ""];
   }
@@ -86,12 +135,12 @@ export class Profile_Model {
   username:string = "";
   email:string = "";
   emailConfirmed:boolean = false;
-  displayName:string = "";
-  description:string = "";
+  displayName?:string|null;
+  description?:string|null;
   publicEmail:boolean = false;
   imageVersion:number = 0;
   hasImage:boolean = false;
-  remoteImageUrl:string = "";
+  remoteImageUrl?:string|null;
   createdAt:Date = new Date();
   roles:string[] = [];
 }

@@ -3,6 +3,7 @@ using System.Net;
 using AspApp.Filters;
 using AspApp.Models;
 using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -18,6 +19,8 @@ namespace AspApp.Controllers;
 public class UserController : ControllerBase
 {
     private readonly UserManager<Identity_UserDbModel> _userManager;
+    private readonly string _storage_Users = Path.Combine("Storage", "Identity", "Users");
+
     public UserController(UserManager<Identity_UserDbModel> userManager)
     {
         _userManager = userManager;
@@ -47,19 +50,10 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ProfileModel()
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            //ModelState.AddModelError("UserId", "Couldn't find any user with the specified user id.");
-            //return BadRequest(ModelState);
-            return Forbid(
-                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
-                })
-            );
+            return Forbid();
         }
 
         User_Profile_Model profileModel = new()
@@ -86,19 +80,74 @@ public class UserController : ControllerBase
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> EditUsername([FromForm][StringLength(64)] string Username)
+    [RequestSizeLimit(128 * 1024)]//128 KB
+    public async Task<IActionResult> SubmitUserImage([FromForm] IFormFile UserImage,
+    [FromServices] IWebHostEnvironment _env)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            return Forbid(
-                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
-                })
-            );
+            return Forbid();
+        }
+
+        DirectoryInfo userDirectoryInfo = Directory.CreateDirectory(
+            Path.Combine(_env.ContentRootPath, _storage_Users, user.Id.ToString("N"))
+        );
+        string userImagePath = Path.Combine(userDirectoryInfo.FullName, "image");
+        using (FileStream fs = System.IO.File.Create(userImagePath))
+        {
+            await UserImage.CopyToAsync(fs);
+        }
+
+        user.HasImage = true;
+        user.ImageVersion++;
+
+        //save
+        await _userManager.UpdateAsync(user);
+
+        return Ok(new { success = true, user.HasImage, user.ImageVersion });
+    }
+
+    [HttpDelete]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> DeleteUserImage([FromServices] IWebHostEnvironment _env)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return Forbid();
+        }
+
+        string userImagePath =
+        Path.Combine(_env.ContentRootPath, _storage_Users, user.Id.ToString("N"), "image");
+
+        if (System.IO.File.Exists(userImagePath))
+        {
+            System.IO.File.Delete(userImagePath);
+
+            //edit user
+            user.HasImage = false;
+            user.ImageVersion = 0;
+            user.RemoteImageUrl = null;
+
+            await _userManager.UpdateAsync(user);
+        }
+
+        return Ok(new { success = true });
+    }
+
+
+
+    [HttpPost]
+    [Authorize]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> EditUsername([FromForm][StringLength(64)] string Username)
+    {
+        var user = await _userManager.GetUserAsync(User);
+        if (user is null)
+        {
+            return Forbid();
         }
 
         IdentityResult result = await _userManager.SetUserNameAsync(user, Username);
@@ -121,17 +170,10 @@ public class UserController : ControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditDisplayName([FromForm][StringLength(64)] string DisplayName)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            return Forbid(
-                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
-                })
-            );
+            return Forbid();
         }
 
         user.DisplayName = DisplayName;
@@ -156,17 +198,10 @@ public class UserController : ControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> ChangeEmail([FromForm][StringLength(128)] string NewEmail)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            return Forbid(
-                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
-                })
-            );
+            return Forbid();
         }
 
         string token = await _userManager.GenerateChangeEmailTokenAsync(user, NewEmail);
@@ -182,17 +217,10 @@ public class UserController : ControllerBase
     public async Task<IActionResult> ConfirmNewEmail([FromQuery][StringLength(128)] string newEmail,
     [FromQuery][StringLength(256)] string token)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            return Forbid(
-                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
-                })
-            );
+            return Forbid();
         }
 
         string decodedToken = WebUtility.UrlDecode(token);
@@ -212,17 +240,10 @@ public class UserController : ControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SendEmailValidationCode()
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            return Forbid(
-                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
-                })
-            );
+            return Forbid();
         }
 
         string token = await _userManager.GenerateEmailConfirmationTokenAsync(user);
@@ -237,17 +258,10 @@ public class UserController : ControllerBase
     [Authorize]
     public async Task<IActionResult> ConfirmEmail([FromQuery][StringLength(256)] string token)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            return Forbid(
-                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
-                })
-            );
+            return Forbid();
         }
 
         string decodedToken = WebUtility.UrlDecode(token);
@@ -267,17 +281,10 @@ public class UserController : ControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> PublicEmail([FromForm] bool PublicEmail)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            return Forbid(
-                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
-                })
-            );
+            return Forbid();
         }
 
         user.PublicEmail = PublicEmail;
@@ -302,17 +309,10 @@ public class UserController : ControllerBase
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> EditDescription([FromForm][StringLength(1024)] string Description)
     {
-        var user = await _userManager.FindByNameAsync(User.Identity!.Name!);
+        var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            return Forbid(
-                authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
-                properties: new AuthenticationProperties(new Dictionary<string, string?>
-                {
-                    [OpenIddictServerAspNetCoreConstants.Properties.Error] = "invalid_user",//Errors.LoginRequired,
-                    [OpenIddictServerAspNetCoreConstants.Properties.ErrorDescription] = "Couldn't find the user."
-                })
-            );
+            return Forbid();
         }
 
         user.Description = Description;

@@ -43,8 +43,8 @@ public class AuthorizationController : ControllerBase
 
 
 
-    [HttpGet("~/Identity/Api/Authorization/Authorize")]
-    [HttpPost("~/Identity/Api/Authorization/Authorize")]
+    [HttpGet("/Identity/Api/Authorization/Authorize")]
+    [HttpPost("/Identity/Api/Authorization/Authorize")]
     [IgnoreAntiforgeryToken]
     public async Task<IActionResult> Authorize()
     {
@@ -245,7 +245,7 @@ public class AuthorizationController : ControllerBase
 
             // In every other case, render the consent form.
             default:
-                string redirectUri = "~/Authorize/Consent" +
+                string redirectUri = "/Authorize/Consent" +
                 QueryString.Create(Request.HasFormContentType ? Request.Form : Request.Query);
                 return Redirect(redirectUri);
         }
@@ -254,7 +254,7 @@ public class AuthorizationController : ControllerBase
 
 
     [Authorize, FormValueRequired("submit.Accept")]
-    [HttpPost("~/Identity/Api/Authorization/Authorize")/*, ValidateAntiForgeryToken*/]
+    [HttpPost("/Identity/Api/Authorization/Authorize")/*, ValidateAntiForgeryToken*/]
     public async Task<IActionResult> Accept()
     {
         var openIddictRequest = HttpContext.GetOpenIddictServerRequest();
@@ -268,8 +268,7 @@ public class AuthorizationController : ControllerBase
         var user = await _userManager.GetUserAsync(User);
         if (user is null)
         {
-            ModelState.AddModelError("User", "The user details cannot be retrieved.");
-            return BadRequest(ModelState);
+            return Forbid();
         }
 
         // Retrieve the application details from the database.
@@ -347,19 +346,25 @@ public class AuthorizationController : ControllerBase
 
 
     [Authorize, FormValueRequired("submit.Deny")]
-    [HttpPost("~/Identity/Api/Authorization/Authorize")/*, ValidateAntiForgeryToken*/]
+    [HttpPost("/Identity/Api/Authorization/Authorize")/*, ValidateAntiForgeryToken*/]
     // Notify OpenIddict that the authorization grant has been denied by the resource owner
     // to redirect the user agent to the client application using the appropriate response_mode.
     public async Task<IActionResult> Deny() //=> Forbid(OpenIddictServerAspNetCoreDefaults.AuthenticationScheme);
     {
         await _signInManager.SignOutAsync();
-        return Redirect("/");
+        return SignOut(
+            authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
+            properties: new AuthenticationProperties
+            {
+                RedirectUri = "/"
+            }
+        );
     }
 
 
 
     [Authorize]
-    [HttpGet("~/Identity/Api/Authorization/Logout")]
+    [HttpGet("/Identity/Api/Authorization/Logout")]
     public async Task<IActionResult> Logout()
     {
         // Ask ASP.NET Core Identity to delete the local and external cookies created
@@ -376,7 +381,7 @@ public class AuthorizationController : ControllerBase
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
             properties: new AuthenticationProperties
             {
-                RedirectUri = "~/"
+                RedirectUri = "/"
             }
         );
     }
@@ -384,7 +389,7 @@ public class AuthorizationController : ControllerBase
 
 
     [Authorize]
-    [/*ActionName(nameof(Logout)),*/ HttpPost("~/Identity/Api/Authorization/Logout")/*, ValidateAntiForgeryToken*/]
+    [/*ActionName(nameof(Logout)),*/ HttpPost("/Identity/Api/Authorization/Logout")/*, ValidateAntiForgeryToken*/]
     public async Task<IActionResult> LogoutPost()
     {
         // Ask ASP.NET Core Identity to delete the local and external cookies created
@@ -401,14 +406,14 @@ public class AuthorizationController : ControllerBase
             authenticationSchemes: OpenIddictServerAspNetCoreDefaults.AuthenticationScheme,
             properties: new AuthenticationProperties
             {
-                RedirectUri = "~/"
+                RedirectUri = "/"
             }
         );
     }
 
 
 
-    [HttpPost("~/Identity/Api/Authorization/Token"), IgnoreAntiforgeryToken, Produces("application/json")]
+    [HttpPost("/Identity/Api/Authorization/Token"), IgnoreAntiforgeryToken, Produces("application/json")]
     public async Task<IActionResult> Exchange()
     {
         var openIddictRequest = HttpContext.GetOpenIddictServerRequest();

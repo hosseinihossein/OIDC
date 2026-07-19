@@ -256,6 +256,7 @@ public class Program
 
 
 
+        //******************* config identity cookie *******************
         builder.Services.ConfigureApplicationCookie(options =>
         {
             options.Cookie.HttpOnly = true; // prevent from js access
@@ -268,6 +269,12 @@ public class Program
 
             //options.LoginPath = "/Account/Login";
             //options.AccessDeniedPath = "/Account/AccessDenied";
+        });
+
+        //******************* SecurityStampValidatorOptions *******************
+        builder.Services.Configure<SecurityStampValidatorOptions>(options =>
+        {
+            options.ValidationInterval = TimeSpan.Zero;
         });
 
 

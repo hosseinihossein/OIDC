@@ -14,7 +14,7 @@ export class ProfileService {
         id:string, 
         imageVersion:number, 
         hasImage:boolean, 
-        remoteImageUrl:string
+        remoteImageUrl?:string|null
     }|null):string|null{
         if(profileModel?.hasImage && profileModel.id){
             return `/Identity/Api/User/ProfileImage?id=${profileModel.id}&v=${profileModel.imageVersion}`;
@@ -23,6 +23,16 @@ export class ProfileService {
             return profileModel.remoteImageUrl;
         }
         return null;
+    }
+
+    postUserImage(userImage:File){
+        let formData = new FormData().append("UserImage",userImage);
+        return this.httpClient.post<{success:boolean,hasImage:boolean,imageVersion:number}>(
+            "/Identity/Api/User/SubmitUserImage", formData
+        );
+    }
+    deleteUserImage(){
+        return this.httpClient.delete<{success:boolean}>("/Identity/Api/User/DeleteUserImage");
     }
 
 }

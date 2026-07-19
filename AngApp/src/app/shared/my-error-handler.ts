@@ -25,6 +25,9 @@ export class MyErrorHandler {
                 case HttpStatusCode.BadRequest:
                     errTypeMessage = "Bad Request";
                     break;
+                case 403://Forbidden
+                    errTypeMessage = "Forbidden";
+                    break;
                 default:
                     errTypeMessage = "Unknown Error";
             }
@@ -34,7 +37,7 @@ export class MyErrorHandler {
         }
 
         this.snackBar.open(errTypeMessage, "Ok"/*, { duration: 5000 }*/);
-        console.error("in my-error-handler");
+        //console.error("in my-error-handler");
         console.error(errTypeMessage, err);
     }
 }
