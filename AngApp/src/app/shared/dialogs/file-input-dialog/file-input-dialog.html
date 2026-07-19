@@ -2,32 +2,33 @@
     <canvas #canvas style="display:none;"></canvas>
 
     @if(data.type === "image"){
-    <div id="img-box" class="clearfix">
+    <div class="file-box clearfix">
         @if(previewImgSrc()){
         <img [src]="previewImgSrc()" [alt]="data.title" #previewImg>
         }
-        @if(!data.value){
-        <button matButton="elevated" id="imageSelectButton" (click)="fileInput.click()">Select New Image</button>
-        <input type="file" hidden #fileInput (change)="onSelectFile($event)">
-        }
+        <button matButton="elevated" class="selectButton" (click)="fileInput.click()">Select New Image</button>
+        <input type="file" hidden #fileInput (change)="onSelectFile($event)"
+            (cancel)="selectedFile.set(null);previewImgSrc.set(data.value);">
     </div>
     }
     @else {
-    <div id="file-box" class="clearfix">
-        <span #fileName>{{selectedFile()?.name}}</span>
-        <button matButton="elevated" id="fileSelectButton" (click)="fileInput.click()">Select New File</button>
-        <input type="file" hidden #fileInput (change)="onSelectFile($event)">
+    <div class="file-box clearfix">
+        @if(selectedFile()){
+        <span style="text-align: center;text-wrap: nowrap;max-width: 100%;">{{selectedFile()?.name}}</span>
+        }
+        <button matButton="elevated" class="selectButton" (click)="fileInput.click()">Select New File</button>
+        <input type="file" hidden #fileInput (change)="onSelectFile($event)" (cancel)="selectedFile.set(null);">
     </div>
     }
 
     @if(data.hasTitle){
     <mat-form-field appearance="fill" subscriptSizing="dynamic">
         <mat-label>Title</mat-label>
-        <input type="text" [formField]="inputForm.title">
+        <input type="text" [formField]="inputForm.title" matInput>
         @if(inputForm.title().errors().length > 0){
         <mat-error>
             @for(error of inputForm.title().errors(); track error.kind){
-            {{error}}
+            {{error.message}}
             }
         </mat-error>
         }
@@ -41,7 +42,7 @@
         @if(inputForm.caption().errors().length > 0){
         <mat-error>
             @for(error of inputForm.caption().errors(); track error.kind){
-            {{error}}
+            {{error.message}}
             }
         </mat-error>
         }
@@ -51,17 +52,19 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-    <button matButton="filled"
-        [mat-dialog-close]="{file:selectedFile(),title:inputForm.title().value(),caption:inputForm.caption().value()}"
-        [disabled]="inputForm().invalid()">
-        Submit
-    </button>
     <button matButton="" mat-dialog-close>
         Cancel
     </button>
+    <button matButton="filled"
+        [mat-dialog-close]="{file:selectedFile(),title:inputForm.title().value(),caption:inputForm.caption().value()}"
+        [disabled]="inputForm().invalid() || (!selectedFile() && !data.value) || 
+        (!selectedFile() && !data.hasCaption && !data.hasTitle) || 
+        (!selectedFile() && data.title === inputForm.title().value() && data.caption === inputForm.caption().value())">
+        Submit
+    </button>
 </mat-dialog-actions>
 
-@if(data.canDelete){
+@if(data.value && data.canDelete){
 <mat-dialog-actions align="start">
     <button matButton="filled"
         style="color: var(--mat-sys-on-error-container);background-color: var(--mat-sys-error-container);"

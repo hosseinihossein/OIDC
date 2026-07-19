@@ -25,8 +25,13 @@ export class ProfileService {
         return null;
     }
 
+    getCsrf(){
+        return this.httpClient.get("/Identity/Api/User/GetCsrf");
+    }
+
     postUserImage(userImage:File){
-        let formData = new FormData().append("UserImage",userImage);
+        let formData = new FormData();
+        formData.append("UserImage",userImage);
         return this.httpClient.post<{success:boolean,hasImage:boolean,imageVersion:number}>(
             "/Identity/Api/User/SubmitUserImage", formData
         );

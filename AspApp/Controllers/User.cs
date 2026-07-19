@@ -77,6 +77,21 @@ public class UserController : ControllerBase
 
 
 
+    [HttpGet]
+    public async Task<IActionResult> ProfileImage([FromQuery] Guid id,
+    [FromServices] IWebHostEnvironment _env)
+    {
+        string userImagePath =
+        Path.Combine(_env.ContentRootPath, _storage_Users, id.ToString("N"), "image");
+
+        if (System.IO.File.Exists(userImagePath))
+        {
+            return PhysicalFile(userImagePath, "application/octet-stream", "userImage", true);
+        }
+
+        return NotFound("User Image Not Found!");
+    }
+
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
@@ -165,6 +180,8 @@ public class UserController : ControllerBase
         }
     }
 
+
+
     [HttpPost]
     [Authorize]
     [ValidateAntiForgeryToken]
@@ -191,6 +208,7 @@ public class UserController : ControllerBase
             return BadRequest(ModelState);
         }
     }
+
 
 
     [HttpPost]
@@ -302,6 +320,7 @@ public class UserController : ControllerBase
             return BadRequest(ModelState);
         }
     }
+
 
 
     [HttpPost]

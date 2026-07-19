@@ -279,7 +279,7 @@ public class Program
 
 
 
-        builder.Services.AddControllers(options =>
+        builder.Services.AddControllersWithViews(options =>
         {
             options.Filters.Add(new RequireHttpsAttribute());
         });

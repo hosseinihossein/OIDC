@@ -4,24 +4,35 @@ mat-form-field{
 mat-dialog-content{
     width: 400px;
 }
-button#imageSelectButton{
-    margin: 88px 8px 0px;
-}
-#img-box{
+.file-box{
     margin: 4px auto;
     width: fit-content;
+    padding-bottom: 48px;
+    position: relative;
 }
-#img-box img{
+.file-box img{
     width: 150px;
     height: 150px;
     object-fit: contain;
-    float: left;
+}
+button.selectButton{
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: fit-content;
+    text-wrap: nowrap;
 }
 
-button#fileSelectButton{
-    margin: 8px;
-}
-#file-box{
+/*button#fileSelectButton{
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: fit-content;
+    text-wrap: nowrap;
+}*/
+/*#file-box{
     margin: 4px auto;
     width: fit-content;
-}
+}*/

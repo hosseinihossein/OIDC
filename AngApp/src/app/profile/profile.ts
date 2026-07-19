@@ -71,12 +71,14 @@ export class Profile {
   editProfileImage(){
     if(!this.profileModel()) return;
 
+    this.profileService.getCsrf().subscribe(/*{next: ()=>{console.log("csrf received")},}*/);
+
     let dialogData = new FileInputDialogModel();
     dialogData.canDelete = true;
     dialogData.hasTitle = false;
     dialogData.hasCaption = false;
     dialogData.type = "image";
-    dialogData.value = this.profileImgSrc() ?? "";
+    dialogData.value = this.profileImgSrc() ?? undefined;
     dialogData.maxSize = 120 * 1024;
 
     this.dialog.open(FileInputDialog, { data: dialogData, }).afterClosed().subscribe(result=>{

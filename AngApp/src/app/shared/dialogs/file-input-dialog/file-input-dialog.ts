@@ -1,12 +1,14 @@
 import { Component, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { form, maxLength, minLength, required, FormField } from '@angular/forms/signals';
+import { MatButton } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogContent, MatDialogActions, MatDialogClose } from '@angular/material/dialog';
 import { MatError, MatFormField, MatLabel } from "@angular/material/form-field";
+import { MatInput } from '@angular/material/input';
 
 @Component({
   selector: 'app-file-input-dialog',
   imports: [MatDialogContent, MatFormField, MatLabel, FormField, MatError, MatDialogActions,
-    MatDialogClose
+    MatDialogClose, MatButton, MatInput
   ],
   templateUrl: './file-input-dialog.html',
   styleUrl: './file-input-dialog.css',
@@ -26,7 +28,7 @@ export class FileInputDialog {
       required(schemaPath.title,{message:"title is required"});
     }
     if(this.data.hasCaption){
-      required(schemaPath.title,{message:"caption is required"});
+      required(schemaPath.caption,{message:"caption is required"});
     }
 
     maxLength(schemaPath.title, 128, {message: "title can not be more than 128 characters"});
